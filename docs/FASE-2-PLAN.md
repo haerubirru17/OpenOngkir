@@ -55,6 +55,40 @@ di Fase 0).
 6. Filter layanan kargo (JTR/SPS/GOKIL dst) dan batas harga wajar,
    seperti yang sudah ada di Berbirru.
 
+## Pipeline
+
+```text
+Tanya ongkir (asal, tujuan, berat, kurir?)
+        |
+        v
+Cek kunci API + batas pemakaian
+        |
+        v
+Lihat buku harga (tariffs)
+   |                    |
+   | ada & segar        | belum ada / basi (> 30 hari)
+   v                    v
+Jawab langsung     Cari kode kurir (courier_places)
+(< 100 ms)               |
+                         v
+                   Panggil kurir via OpenResi (retry 3x)
+                         |
+                         v
+                   Saring (buang kargo, tolak harga aneh)
+                         |
+                         v
+                   Simpan ke buku harga + catat jejak
+                         |
+                         v
+                   Jawab (urut termurah + tanggal cek)
+```
+
+Di belakang layar (cron harian):
+
+- Refresh: rute panas yang berumur > 30 hari dipanen ulang.
+- Spot-check: contoh rute dibanding harga catatan vs live; bila beda,
+  perbarui + catat.
+
 ## Harvester
 
 - Retry 3x + backoff (SiCepat flaky di Fase 0 — gagal 2x baru berhasil).
