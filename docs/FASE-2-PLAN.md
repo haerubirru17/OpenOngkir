@@ -64,6 +64,29 @@ di Fase 0).
 - AnterAja ikut dipanen; bila 403 juga dari VM-1, kurir itu ditandai
   nonaktif sementara, bukan gagal total.
 
+## Menjaga harga tetap benar
+
+Harga bisa beda dari harga resmi kurir karena: tarif berubah setelah
+dicatat, kota yang ke-resolve salah, salah baca dari situs kurir, dan cara
+hitung berat yang beda. Antisipasi berlapis (disetujui user 12 Nov 2026):
+
+1. **Cegah.** Kode wilayah eksplisit per kurir (`courier_places`), bukan
+   nama kota. Tolak harga di luar batas wajar dan harga yang jauh menyimpang
+   dari kurir lain di rute yang sama.
+2. **Kasih tanggal.** Setiap opsi membawa `fetched_at` (kapan terakhir
+   dicek) + flag `cached`. Konsumen bisa menilai sendiri kesegaran harga.
+3. **Cek ulang otomatis (spot-check).** Cron harian mengambil contoh rute,
+   membandingkan harga catatan dengan harga live. Bila beda, perbarui dan
+   catat di `harvest_log`.
+4. **Tombol segar.** Parameter `fresh=1` di `/v1/cost` memaksa panen live
+   saat itu juga, mengabaikan DB.
+5. **Jujur di label.** Respons menandai harga sebagai estimasi. Harga final
+   tetap ikut kurir saat paket diserahkan.
+
+Batasan jujur: selisih tidak bisa dihilangkan 100%. Yang dijamin: selisih
+terdeteksi cepat, harga basi terlihat tanggalnya, dan selalu ada jalan
+cek live.
+
 ## API
 
 - `GET /v1/wilayah?parent=` — provinsi/kabupaten/kecamatan dari tabel wilayah.
