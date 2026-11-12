@@ -1,18 +1,21 @@
 # OpenOngkir
 
-API ongkir mandiri untuk Pasar Buku [Berbirru](https://github.com/haerubirru17/berbirru).
-Database tarif sendiri. Tujuan akhir: **lepas total dari BinderByte** — ongkir,
-wilayah, dan cek resi semuanya pindah.
+Tools pendamping untuk mengetahui ongkir pengiriman tanpa mengandalkan layanan
+pihak ketiga (tanpa agregator seperti BinderByte atau RajaOngkir).
+
+Berdiri sendiri sebagai layanan + database sendiri. Repo Berbirru tidak
+disentuh — Berbirru (atau siapa pun) tinggal memanggil API OpenOngkir.
 
 ## Cara kerja
 
 ```text
-Berbirru (Worker + D1)  <--  Harvester (OpenResi)  <--  Endpoint resmi kurir
-   tabel tarif + wilayah       panen + simpan              tanpa API key agregator
+Konsumen (Berbirru, dll) --> API OpenOngkir --> DB sendiri (wilayah + tarif)
+                                                   ^-- Harvester (OpenResi)
+                                                        endpoint resmi kurir
 ```
 
-- Cek ongkir baca D1 dulu. Rute belum ada, dipanen sekali lalu disimpan.
-- Wilayah dari dataset Kemendagri, bukan dari agregator.
+- Cek ongkir baca DB sendiri. Rute belum ada, dipanen sekali lalu disimpan.
+- Wilayah dari dataset Kemendagri: 38 provinsi, 514 kab/kota, 7.285 kecamatan.
 - Cek resi tetap live, lewat OpenResi.
 - Kurir: JNE, J&T, SiCepat, POS Indonesia, AnterAja.
 
@@ -21,20 +24,24 @@ Berbirru (Worker + D1)  <--  Harvester (OpenResi)  <--  Endpoint resmi kurir
 | Fase | Isi | Status |
 |------|-----|--------|
 | 0 | Validasi OpenResi live (ongkir + resi, 5 kurir) | ✅ Selesai — layak 4/5 kurir, AnterAja pending |
-| 1 | Wilayah mandiri di D1 + migrasi ID kecamatan penjual | Belum |
-| 2 | Tabel tarif D1, panen via OpenResi (demand-driven + cron) | Belum |
-| 3 | Cek resi pindah ke OpenResi | Belum |
-| 4 | Putus total: hapus key + kode BinderByte | Belum |
+| 1 | Wilayah mandiri (dataset + seed di `db/`) | ✅ Selesai |
+| 2 | Tabel tarif + harvester + API ongkir | Belum |
+| 3 | Endpoint cek resi | Belum |
+| 4 | Rilis v1 (deploy + dokumentasi API) | Belum |
 
-Rencana lengkap: [PLAN.md](PLAN.md). Hasil validasi Fase 0: `docs/FASE-0.md`.
+Rencana lengkap: [PLAN.md](PLAN.md). Laporan per fase: `docs/FASE-*.md`.
 
-## Sumber data
+## Data
+
+- `db/schema-wilayah.sql` — skema tabel wilayah.
+- `db/seed-wilayah.sql` — 7.837 baris wilayah (Kepmendagri 2025).
+- Sumber: [aliziodev/laravel-indonesia-regions](https://github.com/aliziodev/laravel-indonesia-regions) (MIT), data cahyadsn/wilayah.
+
+## Sumber panen
 
 - [OpenResi](https://github.com/amayonaise/OpenResi) (MIT) — resolver ongkir + resi
   langsung ke endpoint resmi kurir, tanpa API key. Dipakai sebagai mesin panen,
   bukan sebagai database.
-- Dataset wilayah: [api-wilayah-indonesia](https://github.com/emsifa/api-wilayah-indonesia)
-  / [Wilayah-Administratif-Indonesia](https://github.com/edwardsamuel/Wilayah-Administratif-Indonesia).
 
 ## Catatan
 
@@ -42,4 +49,4 @@ Rencana lengkap: [PLAN.md](PLAN.md). Hasil validasi Fase 0: `docs/FASE-0.md`.
   juta baris. Panen bersifat demand-driven: rute yang pernah dicek yang tersimpan.
 - Tarif kurir berubah, jadi baris tarif punya tanggal ambil dan di-refresh berkala.
 - OpenResi repo baru (Okt 2026) dan memakai endpoint internal kurir — per kurir
-  dipantau, dan adapter dipertahankan agar provider bisa diganti.
+  dipantau, dan adapter dipertahankan agar sumber panen bisa diganti.
