@@ -1,0 +1,1 @@
+{"success":false,"courier":"J&T Express","waybillNumber":"1234567890","verified":false,"status":"AWAITING_PHONE_VERIFICATION","requiresPhoneVerification":true,"message":"Sesuai kebijakan perlindungan privasi J&T Express, masukkan 4 digit terakhir nomor HP pengirim atau penerima (gunakan opsi --phone <4_digit> atau query ?phone=XXXX)."}

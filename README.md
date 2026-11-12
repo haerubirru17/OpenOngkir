@@ -20,7 +20,7 @@ Berbirru (Worker + D1)  <--  Harvester (OpenResi)  <--  Endpoint resmi kurir
 
 | Fase | Isi | Status |
 |------|-----|--------|
-| 0 | Validasi OpenResi live (ongkir + resi, 5 kurir) | Berjalan |
+| 0 | Validasi OpenResi live (ongkir + resi, 5 kurir) | ✅ Selesai — layak 4/5 kurir, AnterAja pending |
 | 1 | Wilayah mandiri di D1 + migrasi ID kecamatan penjual | Belum |
 | 2 | Tabel tarif D1, panen via OpenResi (demand-driven + cron) | Belum |
 | 3 | Cek resi pindah ke OpenResi | Belum |
