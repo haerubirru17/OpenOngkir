@@ -2,6 +2,43 @@ import * as cheerio from 'cheerio';
 import { BaseCourierResolver } from './base.js';
 import { parseLocationQuery } from '../utils/locationParser.js';
 
+// Halaman detail JNE saat ini adalah cangkang JS tanpa tabel: semua rincian
+// + riwayat ada sebagai JSON di `window.allTrackingData` dalam <script>
+// inline (validasi resi asli 12 Nov 2026). Ambil entri untuk resi ini;
+// bila kuncinya tidak cocok tapi hanya ada satu entri, pakai entri itu.
+function extractTrackingData(html, resi) {
+  const m = html.match(/window\.allTrackingData\s*=\s*(\{[\s\S]*?\});/);
+  if (!m) return null;
+  let all;
+  try {
+    all = JSON.parse(m[1]);
+  } catch {
+    return null;
+  }
+  if (!all || typeof all !== 'object') return null;
+  if (all[resi]) return all[resi];
+  const keys = Object.keys(all);
+  return keys.length === 1 ? all[keys[0]] : null;
+}
+
+// Tanggal JNE 'DD-MM-YYYY HH:mm:ss' -> 'YYYY-MM-DD HH:mm:ss', agar
+// Date.parse di tracker bisa mengurutkan events secara kronologis
+// (format DD-MM-YYYY tidak bisa di-parse dan akan tetap urutan terbaru dulu).
+function jneDateToIso(raw) {
+  const m = String(raw || '').trim().match(/^(\d{2})-(\d{2})-(\d{4})(.*)$/);
+  if (!m) return String(raw || '').trim();
+  return `${m[3]}-${m[2]}-${m[1]}${m[4]}`;
+}
+
+// Lokasi dari judul riwayat: kurung siku pertama; bila berisi '|'
+// (mis. 'DELIVERED TO [NAMA | TGL | KOTA]'), ambil segmen terakhir (kota).
+function locationFromTitle(title) {
+  const m = String(title || '').match(/\[([^\]]+)\]/);
+  if (!m) return '';
+  const parts = m[1].split('|').map((p) => p.trim()).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : '';
+}
+
 /**
  * JNE Express Tracking & Shipping Cost Resolver
  * Direct integration with https://jne.co.id (tracking-package, api-origin, api-destination, shipping-fee)
@@ -176,7 +213,7 @@ export class JNEResolver extends BaseCourierResolver {
           courier: this.name,
           waybillNumber: resi,
           verified: true,
-          status: parsedDetail.summary.status || 'DELIVERED',
+          status: parsedDetail.summary.status || 'ON_PROCESS',
           detail: parsedDetail.summary,
           history: parsedDetail.history,
           sourceUrl: verifyData.url,
@@ -414,7 +451,30 @@ export class JNEResolver extends BaseCourierResolver {
     };
     const history = [];
 
-    // 1. Generic Table Key-Value Extractor
+    // 1. Jalur utama: JSON window.allTrackingData (halaman detail saat ini).
+    const data = extractTrackingData(html, resi);
+    if (data) {
+      summary.service = String(data.service || '');
+      summary.dateOfShipment = String(data.shipmentDate || '');
+      summary.origin = String(data.from || '');
+      summary.destination = String(data.to || '');
+      summary.shipper = String(data.shipperName || '');
+      summary.receiver = String(data.receiverNameDetail || data.receiverName || '');
+      summary.status = String(data.currentStatus || 'ON_PROCESS');
+      summary.podDate = String(data.podDate || '');
+      summary.deliveredTo = String(data.receiverName || '');
+      for (const item of Array.isArray(data.history) ? data.history : []) {
+        history.push({
+          date: jneDateToIso(item.date),
+          location: locationFromTitle(item.title),
+          description: String(item.title || ''),
+        });
+      }
+      return { summary, history };
+    }
+
+    // 2. Fallback: halaman lama berbasis tabel (bila JNE mengembalikannya).
+    // Generic Table Key-Value Extractor
     $('table tr').each((_, tr) => {
       const th = $(tr).find('th, td:first-child').text().trim().toLowerCase();
       const td = $(tr).find('td:last-child').text().trim();
@@ -429,7 +489,7 @@ export class JNEResolver extends BaseCourierResolver {
       if (th.includes('pod') || th.includes('diterima oleh') || th.includes('received by')) summary.deliveredTo = td;
     });
 
-    // 2. Timeline / Tracking History parser
+    // Timeline / Tracking History parser (fallback tabel)
     const historyRows = $('table.history tr, .timeline-item, .tracking-history tr, tbody tr');
     historyRows.each((_, el) => {
       const text = $(el).text().trim();
@@ -459,9 +519,10 @@ export class JNEResolver extends BaseCourierResolver {
       }
     });
 
+    // Status hanya dari sel status halaman — JANGAN klaim DELIVERED dari
+    // kata 'delivered' di sembarang tempat halaman (dulu: fullText).
     const lowerStatus = (summary.status || '').toLowerCase();
-    const fullText = $('body').text().toLowerCase();
-    if (lowerStatus.includes('delivered') || lowerStatus.includes('diterima') || fullText.includes('delivered')) {
+    if (lowerStatus.includes('delivered') || lowerStatus.includes('diterima')) {
       summary.status = 'DELIVERED';
     }
 

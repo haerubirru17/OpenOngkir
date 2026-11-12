@@ -14,6 +14,8 @@ tri-state found / not_found / error, alur digit HP.
 | `src/db.js` | `getTrackCache` / `saveTrackCache` / `countTrackCache` (+ prune baris basi) |
 | `tests/track.test.js` | 17 tes unit + mock (tracker + endpoint) |
 | `tests/live.test.js` | +2 tes live (smoke test resi dummy + endpoint HTTP live) |
+| `tests/jne-parser.test.js` | 6 tes regresi parser JNE (lihat "Validasi resi asli" di bawah) |
+| `src/openresi/resolvers/jne.js` | Perbaikan `_parseDetailHtml`: baca JSON `window.allTrackingData` (lihat bawah) |
 
 ## Endpoint
 
@@ -106,23 +108,74 @@ live faktual dari kurir, bukan estimasi.
 | POS | `not_found` → 404 | 1,4 dtk | Pesan bersih. |
 | AnterAja | `not_found` → 404 | 1,4 dtk | **Tracking AnterAja TIDAK terblokir 403** — berbeda dengan API ongkirnya yang 403 dari IP sandbox dan VM-1. Endpoint tracking-nya bisa dijangkau. |
 
+## Validasi resi asli + perbaikan parser JNE (12 Nov 2026, malam)
+
+Validasi pertama dengan resi asli (`KAJ0310243286785`, JNE REG,
+Tangerang → Lubuklinggau Timur I, kirim 16 Okt 2026) menemukan bug:
+`/v1/track` menjawab HTTP 200 + status `DELIVERED`, TAPI
+`service`/`sender`/`recipient`/`origin`/`destination` kosong dan
+`events: []`. Verifikasi digit HP LOLOS, jadi masalahnya ada di parsing
+halaman detail, bukan koneksi.
+
+**Isi halaman detail JNE sebenarnya:** halaman itu cangkang JS dengan
+**nol elemen `<table>`** — semua label (No Resi, Status, Dari, Ke)
+kosong dan baru diisi JavaScript. Seluruh data ada sebagai JSON di
+`<script>` inline: `window.allTrackingData = {"<resi>": {...}}` dengan
+field `currentStatus`, `service`, `from`, `to`, `shipmentDate`,
+`podDate`, `shipperName`, `shipperCity`, `receiverName`,
+`receiverNameDetail`, `receiverCityDetail`, dan `history` (terbaru dulu;
+tiap item `{title, date, active}`, tanggal format `DD-MM-YYYY HH:mm:ss`,
+lokasi tersemat di kurung siku judul).
+
+**Yang salah di parser lama** (`_parseDetailHtml`): hanya membaca tabel
+(`table tr` + `table.history tr` / `.timeline-item` / `tbody tr`) —
+tidak menemukan apa pun di halaman ini. Status `DELIVERED` yang
+terjawab saat itu BUKAN dari halaman, melainkan heuristik
+`fullText.includes('delivered')` (kata itu ada di JSON) dan fallback
+`status || 'DELIVERED'` di `track()`.
+
+**Perbaikan** (`src/openresi/resolvers/jne.js`):
+- `_parseDetailHtml` membaca dulu JSON `window.allTrackingData`
+  (entri per resi; bila kuncinya tidak cocok tapi hanya ada satu entri,
+  pakai entri itu), lalu memetakan field-nya ke summary + history.
+  Tanggal dikonversi `DD-MM-YYYY` → `YYYY-MM-DD` agar `Date.parse` di
+  tracker bisa mengurutkan events kronologis (format JNE mentah tidak
+  bisa di-parse). Lokasi event diambil dari kurung siku pertama judul;
+  bila berisi `|` (mis. `DELIVERED TO [NAMA | TGL | KOTA]`), diambil
+  segmen terakhir (kota). Parsing tabel dipertahankan sebagai fallback
+  bila JNE mengembalikan halaman lama.
+- Status tidak lagi diklaim `DELIVERED` tanpa bukti: fallback di
+  `track()` menjadi `ON_PROCESS`, dan heuristik `fullText` dihapus —
+  status hanya dari `currentStatus` JSON atau sel status tabel.
+- Tes regresi di `tests/jne-parser.test.js` (6 tes): fixture HTML
+  tersanitasi (resi/nama contoh) yang mereplikasi struktur halaman
+  asli — parse JSON lengkap, status mengikuti `currentStatus` (bukan
+  `DELIVERED` bila masih jalan), halaman kosong → `ON_PROCESS`,
+  fallback tabel, dan 2 tes `track()` ujung-ke-ujung dengan fetch
+  di-stub (termasuk jalur yang dulu memicu default `DELIVERED`).
+
+**Verifikasi live ulang** (sandbox, resi asli yang sama): status
+`DELIVERED` (kini dari `currentStatus`, bukti nyata), service `REG`,
+asal Tangerang, tujuan Lubuklinggau Timur I, pengirim/penerima terisi,
+POD 19-10-2026 15:09, dan **9 events** — setelah normalisasi tracker,
+urut kronologis benar (terlama 16-10-2026 14:22 → terbaru 19-10-2026
+15:09). HTML mentah halaman detail TIDAK disimpan di repo (berisi data
+pengiriman asli); fixture tes memakai data palsu.
+
 ## Hasil tes
 
-- `npm test`: **46/46 hijau** (29 lama + 17 baru: normalisasi status/events,
-  validasi phone per kurir, cache + TTL + `fresh=1`, not_found tidak
-  di-cache, tri-state + verifikasi HP, retry + timeout, endpoint 401/400/
-  404/502).
+- `npm test`: **52/52 hijau** (46 lama + 6 baru: parser JSON JNE,
+  status jujur tanpa bukti, fallback tabel, `track()` ujung-ke-ujung
+  dengan fetch di-stub).
 - `npm run test:live`: **6/6 hijau** — 4 tes ongkir Fase 2 tetap lolos
   (harga sama seperti Fase 2) + 2 tes tracking baru (smoke test resi
   dummy 5 kurir + endpoint HTTP live 404/400).
 
 ## Yang masih pending (di luar Fase 3)
 
-- **Validasi resi asli.** Semua tes live memakai resi dummy — yang
-  terbukti baru wiring + tri-state yang rapi. Validasi ujung-ke-ujung
-  (resi sungguhan + digit HP benar → events lengkap, status benar)
-  butuh satu nomor resi asli + digit HP dari user. Belum bisa dilakukan
-  di sini; jangan klaim endpoint teruji resi asli sebelum itu.
+- **Validasi resi asli kurir lain.** JNE sudah tervalidasi resi asli
+  (lihat atas). J&T/SiCepat/AnterAja/POS baru teruji resi dummy —
+  validasi resi asli per kurir masih menunggu bila dibutuhkan.
 - **SiCepat dari VM-1.** Perilaku reCAPTCHA-nya flaky dari IP sandbox
   (sekali gantung > 60 dtk, sekali berhasil 2,8 dtk). Tes ulang dari
   IP VM-1 setelah deploy.
