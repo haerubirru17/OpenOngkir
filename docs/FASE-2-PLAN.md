@@ -1,6 +1,7 @@
 # Fase 2 — Rencana: Tabel Tarif + Harvester + API Ongkir
 
-**Status:** RENCANA — menunggu Gas user.
+**Status:** DIBANGUN — lihat laporan `FASE-2.md`. Dokumen ini adalah
+rencana awal yang disetujui user (penyimpangan dicatat di `FASE-2.md`).
 **Tanggal:** 12 November 2026.
 
 ## Tujuan

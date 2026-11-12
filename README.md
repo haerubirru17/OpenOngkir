@@ -25,11 +25,23 @@ Konsumen (Berbirru, dll) --> API OpenOngkir --> DB sendiri (wilayah + tarif)
 |------|-----|--------|
 | 0 | Validasi OpenResi live (ongkir + resi, 5 kurir) | ✅ Selesai — layak 4/5 kurir, AnterAja pending |
 | 1 | Wilayah mandiri (dataset + seed di `db/`) | ✅ Selesai |
-| 2 | Tabel tarif + harvester + API ongkir | Belum |
+| 2 | Tabel tarif + harvester + API ongkir | ✅ Selesai — 5 rute × 4 kurir live, AnterAja masih pending |
 | 3 | Endpoint cek resi | Belum |
 | 4 | Rilis v1 (deploy + dokumentasi API) | Belum |
 
 Rencana lengkap: [PLAN.md](PLAN.md). Laporan per fase: `docs/FASE-*.md`.
+
+## Menjalankan
+
+```bash
+npm install
+OPENONGKIR_API_KEY=<kunci-acak> node src/server.js
+```
+
+Butuh Node ≥ 24. API: `GET /v1/wilayah?parent=`,
+`GET /v1/cost?origin=&destination=&weight_g=&courier=&fresh=1`,
+`GET /v1/health`. Semua endpoint kecuali `/v1/health` butuh header
+`X-API-Key`. Detail: `docs/FASE-2.md`.
 
 ## Data
 

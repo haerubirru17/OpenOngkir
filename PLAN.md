@@ -36,14 +36,25 @@ ke repo Berbirru (PR berbirru #1). Atas koreksi user, OpenOngkir diputuskan
 sebagai tools mandiri — PR tersebut tidak di-merge dan repo Berbirru tidak
 disentuh. Dataset + seed dipakai ulang di repo ini.
 
-## Fase 2 — Tabel tarif + harvester + API ongkir
+## Fase 2 — Tabel tarif + harvester + API ongkir ✅ Selesai
+
+Layanan Node + SQLite (laporan: `docs/FASE-2.md`):
 
 - Tabel tarif: asal, tujuan, kurir, layanan, berat (kg), harga, ETA,
-  tanggal ambil, sumber.
-- Harvester demand-driven: rute belum ada dipanen sekali via OpenResi,
-  simpan, sajikan. Cron refresh rute panas.
-- API ongkir: cek tarif dari DB (asal, tujuan, berat, kurir opsional).
-- Filter layanan kargo (JTR/SPS/GOKIL) dipertahankan dari Berbirru.
+  tanggal ambil, sumber — plus `courier_places` (peta kode Kemendagri
+  ke kode tiap kurir, per role asal/tujuan) dan `harvest_log`.
+- Harvester demand-driven via OpenResi (vendored, commit `53544af`):
+  retry 3x, timeout 20 dtk/kurir, filter kargo (JTR/SPS/GOKIL),
+  batas harga wajar + filter outlier antar kurir, negative cache 1 jam
+  untuk kurir yang gagal.
+- API ongkir: `GET /v1/cost` (baca DB, panen bila rute belum ada/basi,
+  `fresh=1` memaksa live), `GET /v1/wilayah`, `GET /v1/health`.
+  Auth `X-API-Key`, rate limit 60/menit/IP.
+- Pengaman akurasi: `fetched_at` + flag `cached` di tiap opsi, cron
+  refresh + spot-check harian, label estimasi.
+- Tes live 12 Nov 2026: 5 rute × 4 kurir berhasil (42 baris tarif);
+  request ke-2 dari DB 0,7 ms; AnterAja masih 403 dari IP sandbox
+  (tes ulang dari VM-1 setelah deploy).
 
 ## Fase 3 — Endpoint cek resi
 

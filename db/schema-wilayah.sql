@@ -1,7 +1,7 @@
 -- Skema tabel wilayah OpenOngkir (tools mandiri).
 -- ID memakai kode bertitik Kemendagri (NN / NN.NN / NN.NN.NN).
 -- Seed: db/seed-wilayah.sql (7.837 baris).
-CREATE TABLE wilayah (
+CREATE TABLE IF NOT EXISTS wilayah (
   id TEXT PRIMARY KEY,
   parent_id TEXT,
   level TEXT NOT NULL CHECK (level IN ('provinsi', 'kabupaten', 'kecamatan')),
