@@ -56,12 +56,25 @@ Layanan Node + SQLite (laporan: `docs/FASE-2.md`):
   request ke-2 dari DB 0,7 ms; AnterAja masih 403 dari IP sandbox
   (tes ulang dari VM-1 setelah deploy).
 
-## Fase 3 — Endpoint cek resi
+## Fase 3 — Endpoint cek resi ✅ Selesai
 
-- Cek resi lewat OpenResi (live).
-- Perilaku tri-state: found / notfound / error (gangguan tidak boleh
-  divonis resi palsu).
-- Alur digit HP (JNE 5 digit, J&T 4 digit) diputuskan sebelum membangun.
+Layanan Node + SQLite (laporan: `docs/FASE-3.md`):
+
+- `GET /v1/track?courier=&awb=&phone=&fresh=1` — cek resi live via
+  OpenResi, respons ternormalisasi (status standar, events kronologis).
+- Tri-state: found (200) / not_found (404) / error kurir (502) —
+  gangguan tidak divonis resi palsu.
+- Digit HP wajib untuk JNE (5 digit penerima) dan J&T (4 digit
+  pengirim/penerima); pesan error menyebut hanya digit terakhir yang
+  dibutuhkan. JNE tidak membedakan digit salah vs resi tidak ada
+  (`VERIFICATION_FAILED` → 404 dengan pesan dua kemungkinan).
+- Cache singkat 30 menit (`track_cache`), hanya hasil "ditemukan";
+  `fresh=1` memaksa live. Retry 3x + timeout 20 dtk.
+- Tes live 12 Nov 2026: resi dummy 5 kurir memberi tri-state rapi
+  (JNE verification_failed, J&T/POS/AnterAja not_found, SiCepat
+  flaky — sekali gantung > 60 dtk, sekali not_found 2,8 dtk).
+  AnterAja tracking TIDAK terblokir 403 (berbeda dengan API ongkirnya).
+- PENDING: validasi resi asli butuh satu resi asli + digit HP dari user.
 
 ## Fase 4 — Rilis v1
 

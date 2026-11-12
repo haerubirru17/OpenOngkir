@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import { writeFileSync, rmSync } from 'node:fs';
 import { openDb } from '../src/db.js';
 import { createHarvester } from '../src/harvester.js';
+import { createTracker } from '../src/tracker.js';
+import { createServer } from '../src/server.js';
 
 const LIVE = process.env.OPENONGKIR_LIVE_TEST === '1';
 const DB_PATH = process.env.OPENONGKIR_LIVE_DB || '/tmp/openongkir-live.db';
@@ -110,5 +112,80 @@ describe('live (OpenResi)', { skip: !LIVE }, () => {
     console.log(`\n== AnterAja ${route.name}: ${res.error ? 'GAGAL: ' + res.error : 'BERHASIL ' + JSON.stringify(res.services)} ==`);
     // Tes ini tidak menggagalkan suite: 403 dari IP sandbox adalah hasil yang diharapkan.
     assert.ok(true);
+  });
+});
+
+// Tes LIVE cek resi dengan resi dummy 1234567890 — hanya uji wiring
+// (tri-state rapi), BUKAN validasi resi sungguhan. Resi asli + digit HP
+// yang benar masih menunggu user (lihat docs/FASE-3.md).
+const DUMMY_AWB = '1234567890';
+const TRACK_DB_PATH = process.env.OPENONGKIR_LIVE_TRACK_DB || '/tmp/openongkir-live-track.db';
+const trackResults = { dummy: {}, http: {} };
+
+describe('live tracking (OpenResi)', { skip: !LIVE }, () => {
+  let db;
+  let tracker;
+
+  before(() => {
+    for (const suffix of ['', '-journal', '-wal', '-shm']) rmSync(TRACK_DB_PATH + suffix, { force: true });
+    db = openDb(TRACK_DB_PATH);
+    // Timeout + percobaan dikurangi untuk suite live: SiCepat bisa
+    // menggantung > 60 dtk (aliran reCAPTCHA) dari IP sandbox.
+    tracker = createTracker({ db, timeoutMs: 15000, maxAttempts: 2 });
+  });
+
+  after(() => {
+    writeFileSync('/tmp/openongkir-live-track-results.json', JSON.stringify(trackResults, null, 2));
+    db.close();
+  });
+
+  it('resi dummy: tri-state rapi per kurir (tanpa crash)', async () => {
+    const cases = [
+      // JNE tidak membedakan resi tidak ada vs digit salah (probe 12 Nov).
+      { courier: 'jne', phone: '12345', expect: 'verification_failed' },
+      { courier: 'jnt', phone: '1234', expect: 'not_found' },
+      { courier: 'pos', phone: '', expect: 'not_found' },
+      { courier: 'anteraja', phone: '', expect: 'not_found' },
+      // SiCepat: aliran reCAPTCHA menggantung dari IP sandbox → error
+      // (timeout) adalah hasil yang diharapkan; not_found juga diterima
+      // bila jaringannya sedang bersahabat.
+      { courier: 'sicepat', phone: '', expect: ['error', 'not_found'] },
+    ];
+    for (const c of cases) {
+      const t0 = Date.now();
+      const r = await tracker.track({ courier: c.courier, awb: DUMMY_AWB, phone: c.phone });
+      const ms = Date.now() - t0;
+      trackResults.dummy[c.courier] = { kind: r.kind, message: r.message || '', ms };
+      console.log(`\n== track dummy ${c.courier} (${ms} ms): ${r.kind} — ${(r.message || '').slice(0, 100)} ==`);
+      const expected = Array.isArray(c.expect) ? c.expect : [c.expect];
+      assert.ok(
+        expected.includes(r.kind),
+        `${c.courier}: kind ${r.kind}, diharapkan ${expected.join(' atau ')}`
+      );
+    }
+  });
+
+  it('endpoint /v1/track live: 404 rapi + 400 validasi', async () => {
+    const harvester = createHarvester({ db, resolvers: {}, sleepFn: () => Promise.resolve(), politeDelayMs: 0 });
+    const server = createServer({ db, harvester, tracker, apiKey: 'live-test-key' });
+    await new Promise((r) => server.listen(0, r));
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const headers = { 'X-API-Key': 'live-test-key' };
+    try {
+      const res404 = await fetch(`${base}/v1/track?courier=jnt&awb=${DUMMY_AWB}&phone=1234`, { headers });
+      assert.equal(res404.status, 404);
+      const body404 = await res404.json();
+      assert.equal(body404.success, false);
+      assert.equal(body404.status, 'NOT_FOUND');
+      trackResults.http.notFound = { status: res404.status, bodyStatus: body404.status };
+
+      const res400 = await fetch(`${base}/v1/track?courier=jne&awb=${DUMMY_AWB}`, { headers });
+      assert.equal(res400.status, 400);
+      const body400 = await res400.json();
+      assert.match(body400.error, /5 digit/);
+      trackResults.http.missingPhone = { status: res400.status };
+    } finally {
+      await new Promise((r) => server.close(r));
+    }
   });
 });

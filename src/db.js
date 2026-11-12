@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DB_DIR = join(ROOT, 'db');
 
+// Cache cek resi hanya 30 menit — status paket berubah seiring waktu.
+export const TRACK_CACHE_TTL_MS = 30 * 60 * 1000;
+
 function readSql(name) {
   return readFileSync(join(DB_DIR, name), 'utf8');
 }
@@ -26,6 +29,7 @@ export function openDb(dbPath) {
   db.exec('PRAGMA foreign_keys = ON');
   db.exec(readSql('schema-wilayah.sql'));
   db.exec(readSql('schema-tarif.sql'));
+  db.exec(readSql('schema-track.sql'));
 
   // Seed wilayah sekali, bila tabel masih kosong.
   const { count } = db.prepare('SELECT COUNT(*) AS count FROM wilayah').get();
@@ -203,6 +207,38 @@ export class OpenOngkirDb {
          ORDER BY oldest ASC LIMIT ?`
       )
       .all(limit);
+  }
+
+  // ---- track_cache ----
+
+  /** Baris cache cek resi (apa pun umurnya — pemanggil yang menilai TTL). */
+  getTrackCache(courier, awb) {
+    return (
+      this.db
+        .prepare('SELECT * FROM track_cache WHERE courier = ? AND awb = ?')
+        .get(courier, awb) || null
+    );
+  }
+
+  /** Simpan hasil lacak (payload = JSON hasil normalisasi, tanpa fetched_at). */
+  saveTrackCache(courier, awb, payload, fetchedAt = Date.now()) {
+    this.db
+      .prepare(
+        `INSERT INTO track_cache (courier, awb, payload, fetched_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(courier, awb) DO UPDATE SET
+           payload = excluded.payload,
+           fetched_at = excluded.fetched_at`
+      )
+      .run(courier, awb, payload, fetchedAt);
+    // Bersihkan baris basi sekalian (murah, tabel ini kecil).
+    this.db
+      .prepare('DELETE FROM track_cache WHERE fetched_at < ?')
+      .run(fetchedAt - TRACK_CACHE_TTL_MS);
+  }
+
+  countTrackCache() {
+    return this.db.prepare('SELECT COUNT(*) AS c FROM track_cache').get().c;
   }
 
   // ---- harvest_log ----

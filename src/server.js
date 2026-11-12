@@ -2,6 +2,7 @@
 //
 //   GET /v1/wilayah?parent=          daftar provinsi / kabupaten / kecamatan
 //   GET /v1/cost?origin=&destination=&weight_g=&courier=&fresh=1
+//   GET /v1/track?courier=&awb=&phone=&fresh=1
 //   GET /v1/health                   status layanan (tanpa auth, untuk monitoring)
 //
 // Auth (kecuali /v1/health): header X-API-Key, kunci dari env
@@ -13,6 +14,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.js';
 import { createHarvester, ALL_COURIERS, COURIERS } from './harvester.js';
+import { createTracker } from './tracker.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const RATE_LIMIT_PER_MIN = 60;
@@ -43,8 +45,9 @@ function parseCouriers(param) {
   return [...new Set(list)];
 }
 
-export function createServer({ db, harvester, apiKey, rateLimitPerMin = RATE_LIMIT_PER_MIN } = {}) {
+export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin = RATE_LIMIT_PER_MIN } = {}) {
   const startedAt = Date.now();
+  const track = tracker || createTracker({ db });
   // Rate limit per IP: daftar timestamp permintaan dalam 1 menit terakhir.
   const hits = new Map();
 
@@ -91,10 +94,11 @@ export function createServer({ db, harvester, apiKey, rateLimitPerMin = RATE_LIM
         json(res, 200, {
           success: true,
           status: 'ok',
-          version: '0.2.0',
+          version: '0.3.0',
           uptime_s: Math.floor((Date.now() - startedAt) / 1000),
           tariffs: db.countTariffs(),
           courier_places: db.countCourierPlaces(),
+          track_cached: db.countTrackCache(),
           wilayah: db.countWilayah(),
           last_harvest: last ? new Date(last).toISOString() : null,
         });
@@ -169,6 +173,53 @@ export function createServer({ db, harvester, apiKey, rateLimitPerMin = RATE_LIM
         return;
       }
 
+      if (path === '/v1/track') {
+        const courier = (url.searchParams.get('courier') || '').trim();
+        const awb = (url.searchParams.get('awb') || '').trim();
+        const phone = url.searchParams.get('phone') || '';
+        const fresh = url.searchParams.get('fresh') === '1' || url.searchParams.get('fresh') === 'true';
+
+        const result = await track.track({ courier, awb, phone, fresh });
+        switch (result.kind) {
+          case 'found':
+            json(res, 200, { success: true, ...result.data });
+            return;
+          case 'not_found':
+            json(res, 404, {
+              success: false, error: result.message, courier, awb, status: 'NOT_FOUND',
+            });
+            return;
+          case 'needs_phone':
+            json(res, 400, {
+              success: false, error: result.message, courier, awb,
+              requiresPhoneVerification: true, digits: result.digits,
+            });
+            return;
+          case 'wrong_phone':
+            json(res, 400, {
+              success: false, error: result.message, courier, awb, status: 'WRONG_PHONE_DIGITS',
+            });
+            return;
+          case 'verification_failed':
+            // JNE tidak membedakan digit salah vs resi tidak ada — 404
+            // dengan status yang menjelaskan dua kemungkinan itu.
+            json(res, 404, {
+              success: false, error: result.message, courier, awb, status: 'VERIFICATION_FAILED',
+            });
+            return;
+          case 'invalid':
+            json(res, 400, { success: false, error: result.message });
+            return;
+          default: // 'error' — gangguan kurir, bukan vonis resi palsu.
+            json(res, 502, {
+              success: false,
+              error: `Gagal melacak resi di ${COURIERS[courier.toLowerCase()] || courier}: ${result.message}`,
+              courier, awb,
+            });
+            return;
+        }
+      }
+
       json(res, 404, { success: false, error: `Rute ${path} tidak ditemukan.` });
     } catch (err) {
       console.error('[server] error:', err);
@@ -194,7 +245,8 @@ if (isMain) {
   }
   const db = openDb(dbPath);
   const harvester = createHarvester({ db });
-  const server = createServer({ db, harvester, apiKey });
+  const tracker = createTracker({ db });
+  const server = createServer({ db, harvester, tracker, apiKey });
   server.listen(port, () => {
     console.log(`[openongkir] jalan di port ${port} — DB: ${dbPath}`);
     console.log(`[openongkir] wilayah: ${db.countWilayah()} baris, tarif: ${db.countTariffs()} baris`);
