@@ -71,6 +71,30 @@ function safeEqual(a, b) {
   return timingSafeEqual(ba, bb);
 }
 
+// Peer loopback = koneksi dari cloudflared lokal (produksi diakses lewat
+// Cloudflare Tunnel yang meneruskan ke localhost).
+const LOOPBACK_PEERS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+/**
+ * IP klien asli. Bila peer adalah loopback (cloudflared lokal), semua
+ * permintaan publik tiba dengan remoteAddress yang sama, jadi IP asli
+ * diambil dari header CF-Connecting-IP, atau entri pertama
+ * X-Forwarded-For bila tidak ada. Header hanya dipercaya dari peer
+ * loopback — peer luar selalu dinilai dari remoteAddress (anti spoofing).
+ */
+export function getClientIp(req) {
+  const peer = req.socket.remoteAddress || 'unknown';
+  if (!LOOPBACK_PEERS.has(peer)) return peer;
+  const cf = req.headers['cf-connecting-ip'];
+  if (typeof cf === 'string' && cf.trim()) return cf.trim();
+  const xff = req.headers['x-forwarded-for'];
+  if (typeof xff === 'string') {
+    const first = xff.split(',')[0].trim();
+    if (first) return first;
+  }
+  return peer;
+}
+
 /** Baca body JSON (kosong = {}). Throw {status, message} bila tidak valid. */
 async function readJsonBody(req) {
   const chunks = [];
@@ -126,7 +150,7 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
 
   const server = http.createServer(async (req, res) => {
     try {
-      const ip = req.socket.remoteAddress || 'unknown';
+      const ip = getClientIp(req);
       if (!checkRateLimit(ip)) {
         json(res, 429, { success: false, error: 'Terlalu banyak permintaan. Coba lagi sebentar.' }, { 'Retry-After': '60' });
         return;

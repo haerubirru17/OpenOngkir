@@ -94,6 +94,12 @@ termasuk key yang baru dibuat.
 { "success": false, "error": "Terlalu banyak permintaan. Coba lagi sebentar." }
 ```
 
+**IP klien dibaca dari header `CF-Connecting-IP`** (atau entri pertama
+`X-Forwarded-For` bila tidak ada) saat permintaan tiba lewat Cloudflare
+Tunnel — batas di atas dan batas pembuatan key berlaku per pengunjung,
+bukan per server. Header forward diabaikan bila permintaan tidak datang
+dari tunnel (anti spoofing).
+
 ## GET /v1/health
 
 Status layanan + metrik. **Tanpa auth** (untuk monitoring).

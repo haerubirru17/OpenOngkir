@@ -24,10 +24,10 @@ async function stop(ctx) {
   ctx.db.close();
 }
 
-function createKey(base, label) {
+function createKey(base, label, extraHeaders = {}) {
   return fetch(`${base}/v1/api-keys`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
     body: label === undefined ? undefined : JSON.stringify({ label }),
   });
 }
@@ -84,6 +84,24 @@ describe('POST /v1/api-keys', () => {
       assert.equal(res.status, 429);
       const b = await res.json();
       assert.match(b.error, /maksimal 3 kunci baru per 24 jam/);
+    } finally {
+      await stop(ctx);
+    }
+  });
+
+  it('CF-Connecting-IP berbeda = kuota pembuatan terpisah (peer loopback)', async () => {
+    const ctx = await startServer();
+    try {
+      // IP-A menghabiskan jatahnya: 3×201 lalu 429.
+      for (let i = 0; i < 3; i++) {
+        const res = await createKey(ctx.base, undefined, { 'CF-Connecting-IP': '203.0.113.1' });
+        assert.equal(res.status, 201);
+      }
+      const fourth = await createKey(ctx.base, undefined, { 'CF-Connecting-IP': '203.0.113.1' });
+      assert.equal(fourth.status, 429);
+      // IP-B tidak terpengaruh jatah IP-A.
+      const other = await createKey(ctx.base, undefined, { 'CF-Connecting-IP': '203.0.113.2' });
+      assert.equal(other.status, 201);
     } finally {
       await stop(ctx);
     }
