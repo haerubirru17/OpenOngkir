@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="OpenOngkir — cek ongkir dan lacak resi dari database tarif sendiri, langsung dari kurir resmi, tanpa agregator pihak ketiga.">
+<meta name="description" content="Konsol OpenOngkir — cek ongkir, lacak resi, kelola API key, dan dokumentasi API dari database tarif sendiri, tanpa agregator pihak ketiga.">
 <title>OpenOngkir — Cek Ongkir &amp; Lacak Resi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,11 +24,15 @@
     --danger: #b91c1c;
     --danger-soft: #fdf2f2;
     --pre-bg: #f4f3ef;
+    --code-bg: #1b1b18;
+    --code-ink: #f4f3ef;
+    --code-muted: #b9b7ae;
     --chip-bg: #f0efea;
     --radius: 12px;
     --radius-sm: 8px;
     --shadow-card: 0 1px 2px rgba(27, 27, 24, 0.05), 0 8px 24px rgba(27, 27, 24, 0.04);
-    --shadow-tab: 0 1px 3px rgba(27, 27, 24, 0.12);
+    --sidebar-w: 264px;
+    --topbar-h: 60px;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -40,31 +44,46 @@
     color: var(--ink);
     background: var(--paper);
   }
+  body.no-scroll { overflow: hidden; }
   ::selection { background: #cde9d4; }
   :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 4px; }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 64px; }
-  @media (min-width: 640px) { .wrap { padding: 0 24px 80px; } }
 
-  /* ---- Topbar ---- */
-  .topbar {
-    position: sticky;
+  /* ---- App shell ---- */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ---- Sidebar ---- */
+  .sidebar {
+    position: fixed;
     top: 0;
-    z-index: 10;
-    background: var(--paper);
-    border-bottom: 1px solid var(--line);
+    bottom: 0;
+    left: 0;
+    width: var(--sidebar-w);
+    flex: none;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    transform: translateX(-100%);
+    transition: transform 250ms ease-out;
+    overflow-y: auto;
   }
-  .topbar-inner {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 0 16px;
-    height: 60px;
+  .sidebar.open { transform: translateX(0); }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(27, 27, 24, 0.45);
+  }
+  .side-brand {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
+    padding: 16px 16px 16px 20px;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--ink);
   }
-  @media (min-width: 640px) { .topbar-inner { padding: 0 24px; } }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
   .brand-mark {
     width: 32px;
     height: 32px;
@@ -76,11 +95,96 @@
     border-radius: 8px;
   }
   .brand-mark svg { width: 18px; height: 18px; }
-  .brand-name { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; }
+  .brand-name { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+  .brand-sub { display: block; font-size: 0.78rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  .side-close {
+    margin-left: auto;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .side-close:hover { background: var(--chip-bg); color: var(--ink); }
+  .side-close svg { width: 20px; height: 20px; }
+  .side-nav { display: flex; flex-direction: column; gap: 2px; padding: 12px; }
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: background 180ms ease, color 180ms ease;
+  }
+  .nav-link svg { width: 18px; height: 18px; flex: none; color: var(--muted); }
+  .nav-link:hover { background: var(--chip-bg); }
+  .nav-link[aria-current="page"] { background: var(--green-soft); color: var(--green-deep); }
+  .nav-link[aria-current="page"] svg { color: var(--green-deep); }
+  .side-foot {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--line);
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .side-foot p { margin: 0 0 6px; }
+  .side-foot p:last-child { margin-bottom: 0; }
+  .side-foot a { color: var(--green); font-weight: 600; }
+
+  /* ---- Main column ---- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: var(--topbar-h);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+  .menu-btn {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .menu-btn:hover { background: var(--chip-bg); }
+  .menu-btn svg { width: 22px; height: 22px; }
+  .page-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .status-pill {
     display: inline-flex;
     align-items: center;
     gap: 7px;
+    flex: none;
     min-height: 32px;
     padding: 5px 12px;
     background: var(--surface);
@@ -103,19 +207,24 @@
   .status-pill.is-down .dot { background: var(--danger); animation: none; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-  /* ---- Hero ---- */
-  .hero { padding: 36px 0 26px; }
-  @media (min-width: 640px) { .hero { padding: 48px 0 32px; } }
-  .hero h1 {
-    margin: 0 0 12px;
-    font-size: clamp(1.9rem, 6vw, 2.6rem);
-    line-height: 1.12;
-    letter-spacing: -0.02em;
-    font-weight: 800;
-    text-wrap: balance;
+  .content { width: 100%; max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  .view { animation: rise 200ms ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .section-head { margin-bottom: 20px; }
+  .section-head h2 { margin: 0 0 8px; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
+  .section-head p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+  @media (min-width: 640px) {
+    .topbar { padding: 0 24px; }
+    .content { padding: 32px 24px 80px; }
+    .page-title { font-size: 1.25rem; }
   }
-  .hero h1 .accent { color: var(--green); }
-  .hero p { margin: 0; color: var(--muted); font-size: 1.05rem; max-width: 58ch; }
+  @media (min-width: 1024px) {
+    .sidebar { position: sticky; top: 0; height: 100vh; transform: none; }
+    .overlay { display: none; }
+    .menu-btn { display: none; }
+    .side-close { display: none; }
+  }
 
   /* ---- Cards ---- */
   .card {
@@ -125,12 +234,42 @@
     box-shadow: var(--shadow-card);
   }
   .card + .card { margin-top: 20px; }
+  .card-pad { padding: 20px; }
+  @media (min-width: 640px) { .card-pad { padding: 22px 24px; } }
 
-  /* ---- API key strip ---- */
-  .key-card { padding: 20px; }
-  @media (min-width: 640px) { .key-card { padding: 22px 24px; } }
+  /* ---- Overview ---- */
+  .key-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-size: 0.92rem;
+  }
+  .key-line a { color: var(--green); font-weight: 600; }
+  .shortcuts { list-style: none; margin: 0; padding: 0; }
+  .shortcuts li { border-bottom: 1px solid var(--line); }
+  .shortcuts li:last-child { border-bottom: 0; }
+  .shortcuts a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 12px 4px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .shortcuts a:hover .shortcut-name { color: var(--green-deep); }
+  .shortcuts svg { width: 18px; height: 18px; flex: none; color: var(--green); }
+  .shortcut-name { font-weight: 700; }
+  .shortcut-desc { color: var(--muted); font-size: 0.88rem; }
+  .shortcuts .chev { margin-left: auto; color: var(--muted); }
+
+  /* ---- API key ---- */
   .key-head { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between; }
-  .key-head h2 { margin: 0 0 4px; font-size: 1rem; font-weight: 700; }
+  .key-head h3 { margin: 0 0 4px; font-size: 1rem; font-weight: 700; }
   .key-head p { margin: 0; color: var(--muted); font-size: 0.92rem; max-width: 46ch; }
   .key-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .key-saved { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.95rem; }
@@ -163,44 +302,6 @@
   .key-new-block input { flex: 1 1 260px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.85rem; }
   .hint { font-size: 0.85rem; color: var(--muted); }
   .key-status { margin: 12px 0 0; }
-
-  /* ---- Tabs ---- */
-  .tool-card { overflow: hidden; }
-  .tabs {
-    display: flex;
-    gap: 4px;
-    padding: 8px;
-    background: var(--chip-bg);
-    border-bottom: 1px solid var(--line);
-  }
-  .tab {
-    flex: 1;
-    min-height: 48px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 0 12px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    font: inherit;
-    font-size: 0.98rem;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
-  }
-  .tab svg { width: 18px; height: 18px; flex: none; }
-  .tab:hover { color: var(--ink); }
-  .tab[aria-selected="true"] {
-    background: var(--surface);
-    color: var(--green-deep);
-    border-color: var(--line);
-    box-shadow: var(--shadow-tab);
-  }
-  .panel { padding: 20px; }
-  @media (min-width: 640px) { .panel { padding: 24px; } }
 
   /* ---- Forms ---- */
   .field { margin-bottom: 16px; }
@@ -270,10 +371,7 @@
   .submit-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 20px; }
 
   /* ---- Buttons ---- */
-  button {
-    font: inherit;
-    cursor: pointer;
-  }
+  button { font: inherit; cursor: pointer; }
   .btn {
     display: inline-flex;
     align-items: center;
@@ -312,7 +410,6 @@
   .result-area { margin-top: 24px; }
   .result-area:empty { margin-top: 0; }
   .result { animation: rise 250ms ease-out; }
-  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .empty-state {
     border: 1px dashed var(--line);
     border-radius: var(--radius-sm);
@@ -432,24 +529,103 @@
   }
   code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; }
 
-  /* ---- Status section ---- */
-  .status-card { padding: 20px; }
-  @media (min-width: 640px) { .status-card { padding: 22px 24px; } }
-  .status-card > summary {
-    cursor: pointer;
-    list-style: none;
+  /* ---- Dokumentasi ---- */
+  .docs-toc { list-style: none; margin: 0; padding: 0; }
+  .docs-toc li { border-bottom: 1px solid var(--line); }
+  .docs-toc li:last-child { border-bottom: 0; }
+  .docs-toc a {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    align-items: baseline;
+    padding: 12px 4px;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .docs-toc a:hover { color: var(--green-deep); }
+  .docs-toc code { font-weight: 600; }
+  .docs-toc .toc-desc { color: var(--muted); font-size: 0.88rem; }
+  .doc-sec { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); scroll-margin-top: 76px; }
+  .doc-sec:first-of-type { margin-top: 24px; }
+  .doc-sec h3 { margin: 0 0 8px; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; }
+  .doc-sec h4 { margin: 20px 0 8px; font-size: 1rem; font-weight: 700; }
+  .doc-sec p { margin: 0 0 12px; max-width: 68ch; }
+  .doc-sec p:last-child { margin-bottom: 0; }
+  .doc-sec ul { margin: 0 0 12px; padding-left: 20px; max-width: 68ch; }
+  .doc-sec li { margin-bottom: 6px; }
+  .doc-sec li:last-child { margin-bottom: 0; }
+  .method {
+    display: inline-block;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-right: 8px;
+    vertical-align: 2px;
+  }
+  .method-get { background: var(--green-soft); color: var(--green-deep); }
+  .method-post { background: var(--amber-soft); color: var(--amber); }
+  .doc-path { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+  .table-scroll { overflow-x: auto; margin: 12px 0; -webkit-overflow-scrolling: touch; }
+  table.doc {
+    width: 100%;
+    min-width: 520px;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  table.doc th {
+    text-align: left;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 8px 12px 8px 0;
+    border-bottom: 2px solid var(--line);
+  }
+  table.doc td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.doc tr:last-child td { border-bottom: 0; }
+  table.doc td:last-child, table.doc th:last-child { padding-right: 0; }
+  .req { font-weight: 700; color: var(--green-deep); white-space: nowrap; }
+  .opt { color: var(--muted); white-space: nowrap; }
+  .codeblock {
+    margin: 14px 0;
+    border: 1px solid #2c2c28;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--code-bg);
+  }
+  .codeblock-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    font-weight: 700;
-    font-size: 1rem;
+    padding: 8px 12px;
+    border-bottom: 1px solid #33332f;
+    color: var(--code-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
   }
-  .status-card > summary::-webkit-details-marker { display: none; }
-  .status-card > summary .chev { transition: transform 200ms ease; color: var(--muted); flex: none; }
-  .status-card[open] > summary .chev { transform: rotate(180deg); }
-  .status-body { margin-top: 16px; }
-  .status-body .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .copy-btn {
+    min-height: 32px;
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px solid #4a4a44;
+    border-radius: 6px;
+    color: #e8e7e2;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .copy-btn:hover { border-color: #e8e7e2; }
+  .codeblock pre { margin: 0; background: transparent; color: var(--code-ink); border-radius: 0; }
+  .note {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    margin: 14px 0;
+  }
+  .note strong { font-weight: 700; }
 
   footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
   footer p { margin: 0 0 8px; }
@@ -462,183 +638,553 @@
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="topbar-inner">
-    <a class="brand" href="/test" aria-label="OpenOngkir">
+<div class="app">
+  <div class="overlay" id="overlay" hidden></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="Navigasi konsol">
+    <a class="side-brand" href="#/overview">
       <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M7.5 4.27 16.5 9.42"/></svg></span>
-      <span class="brand-name">OpenOngkir</span>
+      <span><span class="brand-name">OpenOngkir</span><span class="brand-sub">Konsol API</span></span>
+      <button type="button" class="side-close" id="side-close" aria-label="Tutup menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </a>
-    <span class="status-pill" id="status-pill"><span class="dot" aria-hidden="true"></span><span id="status-pill-text">Memuat status…</span></span>
+    <nav class="side-nav" aria-label="Bagian konsol">
+      <a class="nav-link" href="#/overview" data-nav="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>Overview</a>
+      <a class="nav-link" href="#/cek-ongkir" data-nav="cek-ongkir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>Cek Ongkir</a>
+      <a class="nav-link" href="#/lacak-resi" data-nav="lacak-resi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Lacak Resi</a>
+      <a class="nav-link" href="#/api-keys" data-nav="api-keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>API Keys</a>
+      <a class="nav-link" href="#/dokumentasi" data-nav="dokumentasi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Dokumentasi</a>
+    </nav>
+    <div class="side-foot">
+      <p>OpenOngkir v1 — database tarif sendiri, dipanen dari kurir resmi.</p>
+      <p>Dokumentasi lengkap juga tersedia di <code>docs/API.md</code> pada repo.</p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="menu-btn" id="menu-btn" aria-label="Buka menu" aria-expanded="false" aria-controls="sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+      <h1 class="page-title" id="page-title">Overview</h1>
+      <span class="status-pill" id="status-pill"><span class="dot" aria-hidden="true"></span><span id="status-pill-text">Memuat status…</span></span>
+    </header>
+
+    <main class="content">
+
+      <!-- ================= OVERVIEW ================= -->
+      <section class="view" id="view-overview" aria-label="Overview">
+        <div class="section-head">
+          <h2>Overview</h2>
+          <p>Cek ongkir &amp; lacak resi dari database tarif sendiri — dipanen langsung dari kurir resmi, tanpa layanan agregator pihak ketiga. Semua harga adalah estimasi.</p>
+        </div>
+
+        <section class="card card-pad" aria-label="Status layanan">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 700;">Status layanan</h3>
+            <button type="button" id="health-refresh" class="btn btn-secondary btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Muat ulang</button>
+          </div>
+          <div id="overview-stats"><p class="hint">Memuat…</p></div>
+          <div class="key-line">
+            <span id="overview-key-none">Belum ada API key tersimpan.</span>
+            <span id="overview-key-saved" hidden>API key tersimpan di browser ini.</span>
+            <a href="#/api-keys">Kelola API key →</a>
+          </div>
+        </section>
+
+        <section class="card card-pad" aria-label="Jalan pintas" style="margin-top: 20px;">
+          <h3 style="margin: 0 0 4px; font-size: 1rem; font-weight: 700;">Jalan pintas</h3>
+          <ul class="shortcuts">
+            <li><a href="#/cek-ongkir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg><span><span class="shortcut-name">Cek ongkir</span><br><span class="shortcut-desc">Bandingkan tarif 5 kurir dari database sendiri</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>
+            <li><a href="#/lacak-resi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span><span class="shortcut-name">Lacak resi</span><br><span class="shortcut-desc">Status paket live dari kurir, cache 30 menit</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>
+            <li><a href="#/api-keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><span><span class="shortcut-name">Buat API key</span><br><span class="shortcut-desc">Gratis, maksimal 3 kunci baru per 24 jam</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>
+            <li><a href="#/dokumentasi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span><span class="shortcut-name">Dokumentasi API</span><br><span class="shortcut-desc">Referensi 5 endpoint, contoh curl &amp; respons</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>
+          </ul>
+        </section>
+      </section>
+
+      <!-- ================= CEK ONGKIR ================= -->
+      <section class="view" id="view-cek-ongkir" aria-label="Cek ongkir" hidden>
+        <div class="section-head">
+          <h2>Cek Ongkir</h2>
+          <p>Harga dibaca dari database tarif sendiri; rute yang belum ada atau sudah basi dipanen live lalu disimpan. Semua harga adalah estimasi.</p>
+        </div>
+        <section class="card card-pad" aria-label="Form cek ongkir">
+          <form id="cost-form">
+            <div class="grid-2">
+              <div>
+                <p class="place-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Asal</p>
+                <div class="field">
+                  <label for="origin-prov">Provinsi</label>
+                  <select id="origin-prov" name="origin-prov"></select>
+                </div>
+                <div class="field">
+                  <label for="origin-kab">Kab/Kota</label>
+                  <select id="origin-kab" name="origin-kab" disabled></select>
+                </div>
+                <div class="field">
+                  <label for="origin-kec">Kecamatan</label>
+                  <select id="origin-kec" name="origin-kec" disabled></select>
+                </div>
+              </div>
+              <div>
+                <p class="place-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Tujuan</p>
+                <div class="field">
+                  <label for="dest-prov">Provinsi</label>
+                  <select id="dest-prov" name="dest-prov"></select>
+                </div>
+                <div class="field">
+                  <label for="dest-kab">Kab/Kota</label>
+                  <select id="dest-kab" name="dest-kab" disabled></select>
+                </div>
+                <div class="field">
+                  <label for="dest-kec">Kecamatan</label>
+                  <select id="dest-kec" name="dest-kec" disabled></select>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label for="weight">Berat (gram)</label>
+              <input type="number" id="weight" name="weight" value="1000" min="100" max="30000" step="1" inputmode="numeric">
+            </div>
+            <fieldset>
+              <legend>Kurir</legend>
+              <div class="chips" id="courier-checks"></div>
+            </fieldset>
+            <label class="check"><input type="checkbox" class="plain" id="cost-fresh"> Panen ulang dari kurir (fresh=1, abaikan DB)</label>
+            <div class="submit-row">
+              <button type="submit" class="btn btn-primary btn-block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Cek ongkir</span></button>
+            </div>
+          </form>
+          <div class="result-area" id="cost-result">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+              <div>Belum ada hasil — isi asal, tujuan, dan berat, lalu tekan Cek ongkir.</div>
+            </div>
+          </div>
+          <details class="raw" id="cost-raw-wrap" hidden>
+            <summary>Respons JSON <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <pre id="cost-raw"></pre>
+          </details>
+        </section>
+      </section>
+
+      <!-- ================= LACAK RESI ================= -->
+      <section class="view" id="view-lacak-resi" aria-label="Lacak resi" hidden>
+        <div class="section-head">
+          <h2>Lacak Resi</h2>
+          <p>Status paket live dari kurir. Hasil yang ditemukan di-cache 30 menit; resi tidak ditemukan selalu dicek live lagi.</p>
+        </div>
+        <section class="card card-pad" aria-label="Form lacak resi">
+          <form id="track-form">
+            <div class="field">
+              <label for="track-courier">Kurir</label>
+              <select id="track-courier" name="track-courier"></select>
+            </div>
+            <div class="field">
+              <label for="awb">Nomor resi</label>
+              <input type="text" id="awb" name="awb" autocomplete="off" placeholder="Nomor resi" autocapitalize="characters">
+            </div>
+            <div class="field">
+              <label for="phone">Digit terakhir HP penerima</label>
+              <input type="text" id="phone" name="phone" autocomplete="off" inputmode="numeric" placeholder="JNE: 5 digit, J&amp;T: 4 digit">
+              <p class="hint">JNE butuh 5 digit terakhir, J&amp;T 4 digit terakhir nomor HP penerima. Kurir lain tidak butuh digit ini.</p>
+            </div>
+            <label class="check"><input type="checkbox" class="plain" id="track-fresh"> Tanya ulang ke kurir (fresh=1, abaikan cache)</label>
+            <div class="submit-row">
+              <button type="submit" class="btn btn-primary btn-block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lacak resi</span></button>
+            </div>
+          </form>
+          <div class="result-area" id="track-result">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <div>Belum ada hasil — isi kurir dan nomor resi, lalu tekan Lacak resi.</div>
+            </div>
+          </div>
+          <details class="raw" id="track-raw-wrap" hidden>
+            <summary>Respons JSON <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <pre id="track-raw"></pre>
+          </details>
+        </section>
+      </section>
+
+      <!-- ================= API KEYS ================= -->
+      <section class="view" id="view-api-keys" aria-label="API Keys" hidden>
+        <div class="section-head">
+          <h2>API Keys</h2>
+          <p>Semua endpoint kecuali <code>/v1/health</code> dan <code>POST /v1/api-keys</code> butuh header <code>X-API-Key</code>. Kunci hanya disimpan di browser ini.</p>
+        </div>
+        <section class="card card-pad" aria-label="API key">
+          <div id="key-none">
+            <div class="key-head">
+              <div>
+                <h3>API key</h3>
+                <p>Cek ongkir dan lacak resi butuh API key. Buat satu gratis — maksimal 3 kunci baru per 24 jam per IP.</p>
+              </div>
+              <div class="key-actions">
+                <button type="button" id="key-create" class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><span>Buat API key gratis</span></button>
+              </div>
+            </div>
+            <details class="paste" id="key-paste-wrap">
+              <summary>Punya key? Tempel di sini <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+              <form id="key-form" class="paste-form">
+                <div class="field">
+                  <label for="api-key">Kunci API</label>
+                  <input type="password" id="api-key" name="api-key" autocomplete="off" placeholder="Tempel kunci API di sini">
+                </div>
+                <button type="submit" class="btn btn-secondary">Simpan</button>
+              </form>
+            </details>
+            <p class="hint key-status" id="key-status" aria-live="polite"></p>
+          </div>
+          <div id="key-saved" hidden>
+            <div class="key-head">
+              <div class="key-saved">
+                <span class="ok-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span>API key tersimpan di browser ini.</span>
+              </div>
+              <div class="key-actions">
+                <button type="button" id="key-change" class="btn btn-secondary btn-sm">Ganti key</button>
+                <button type="button" id="key-forget" class="btn btn-secondary btn-sm">Lupakan</button>
+              </div>
+            </div>
+            <p class="hint key-status">Kunci hanya disimpan di browser ini dan hanya dikirim ke API OpenOngkir.</p>
+          </div>
+          <div id="key-created" hidden>
+            <div class="key-new-block">
+              <p><strong>Kunci baru — simpan sekarang, hanya ditampilkan sekali.</strong> Kunci ini sudah otomatis tersimpan di browser ini.</p>
+              <div class="row">
+                <input type="text" id="key-new" readonly aria-label="API key baru">
+                <button type="button" id="key-copy" class="btn btn-secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Salin</span></button>
+              </div>
+            </div>
+          </div>
+          <div id="key-create-error"></div>
+        </section>
+        <section class="card card-pad" aria-label="Tentang API key" style="margin-top: 20px;">
+          <h3 style="margin: 0 0 8px; font-size: 1rem; font-weight: 700;">Cara kerja kunci</h3>
+          <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.95rem;">
+            <li style="margin-bottom: 6px;">Kunci yang dibuat di sini hanya ditampilkan sekali di respons — server menyimpan hash SHA-256-nya, bukan kunci aslinya, jadi kunci yang hilang tidak bisa ditampilkan lagi.</li>
+            <li style="margin-bottom: 6px;">Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam. Melewati batas menjawab <code>429</code>.</li>
+            <li style="margin-bottom: 6px;">Rate limit 60 permintaan/menit/IP berlaku untuk semua key, termasuk yang baru dibuat.</li>
+            <li>Kunci yang dicabut ditolak <code>401</code>. Konsol ini tidak menampilkan daftar kunci — API tidak menyediakannya.</li>
+          </ul>
+        </section>
+      </section>
+
+      <!-- ================= DOKUMENTASI ================= -->
+      <section class="view" id="view-dokumentasi" aria-label="Dokumentasi" hidden>
+        <div class="section-head">
+          <h2>Dokumentasi API</h2>
+          <p>Referensi lengkap API OpenOngkir v1. Base URL <code>https://ongkir.lightvela.my.id</code>. Semua contoh memakai data fiktif.</p>
+        </div>
+
+        <section class="card card-pad" aria-label="Daftar isi dokumentasi">
+          <h3 style="margin: 0 0 4px; font-size: 1rem; font-weight: 700;">Daftar isi</h3>
+          <ul class="docs-toc">
+            <li><a href="#/dokumentasi/pengantar"><code>Pengantar</code><span class="toc-desc">Format respons &amp; cara memanggil API</span></a></li>
+            <li><a href="#/dokumentasi/auth"><code>Autentikasi</code><span class="toc-desc">Header X-API-Key, master key vs key generate</span></a></li>
+            <li><a href="#/dokumentasi/rate-limit"><code>Rate limit</code><span class="toc-desc">60 permintaan/menit/IP</span></a></li>
+            <li><a href="#/dokumentasi/health"><code>GET /v1/health</code><span class="toc-desc">Status layanan + metrik, tanpa auth</span></a></li>
+            <li><a href="#/dokumentasi/wilayah"><code>GET /v1/wilayah</code><span class="toc-desc">Daftar wilayah Kemendagri</span></a></li>
+            <li><a href="#/dokumentasi/cost"><code>GET /v1/cost</code><span class="toc-desc">Cek ongkir dari database tarif</span></a></li>
+            <li><a href="#/dokumentasi/track"><code>GET /v1/track</code><span class="toc-desc">Cek resi live ke kurir</span></a></li>
+            <li><a href="#/dokumentasi/api-keys"><code>POST /v1/api-keys</code><span class="toc-desc">Buat API key baru, tanpa auth</span></a></li>
+            <li><a href="#/dokumentasi/errors"><code>Kode error</code><span class="toc-desc">400, 401, 404, 405, 429, 500, 502</span></a></li>
+            <li><a href="#/dokumentasi/catatan"><code>Catatan penting</code><span class="toc-desc">Estimasi, cache, dan perilaku tiap kurir</span></a></li>
+          </ul>
+        </section>
+
+        <div class="doc-sec" id="doc-pengantar">
+          <h3>Pengantar</h3>
+          <p>OpenOngkir adalah layanan cek ongkir + cek resi dengan database tarif sendiri — tanpa agregator pihak ketiga. Harga ongkir dijawab dari database (dipanen dari endpoint resmi kurir bila rute belum ada); cek resi selalu live ke kurir.</p>
+          <ul>
+            <li><strong>Base URL:</strong> <code>https://ongkir.lightvela.my.id</code></li>
+            <li><strong>Versi API:</strong> v1 (semua endpoint di bawah <code>/v1/</code>)</li>
+            <li><strong>Metode:</strong> <code>GET</code>, kecuali <code>POST /v1/api-keys</code> untuk membuat kunci. Metode lain menjawab <code>405</code>.</li>
+            <li><strong>Format:</strong> JSON (<code>Content-Type: application/json; charset=utf-8</code>). Respons sukses selalu diawali <code>"success": true</code>; respons gagal <code>"success": false</code> + <code>"error"</code> berisi pesan yang bisa ditampilkan.</li>
+          </ul>
+        </div>
+
+        <div class="doc-sec" id="doc-auth">
+          <h3>Autentikasi</h3>
+          <p>Semua endpoint kecuali <code>/v1/health</code> dan <code>POST /v1/api-keys</code> wajib mengirim header:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Header wajib</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>X-API-Key: &lt;kunci&gt;</pre>
+          </div>
+          <p>Tanpa header ini, atau kunci salah, API menjawab <code>401</code>:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons 401</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{ "success": false, "error": "API key tidak valid. Kirim header X-API-Key." }</pre>
+          </div>
+          <p>Kunci yang diterima ada dua jenis: master key dari env <code>OPENONGKIR_API_KEY</code> di server, dan key yang dibuat lewat <code>POST /v1/api-keys</code> (disimpan server sebagai hash SHA-256 — key aslinya tidak pernah disimpan). Key yang dicabut ditolak <code>401</code>.</p>
+        </div>
+
+        <div class="doc-sec" id="doc-rate-limit">
+          <h3>Rate limit</h3>
+          <p><strong>60 permintaan/menit per IP</strong> (berlaku untuk semua endpoint, termasuk <code>/v1/health</code>). Melewati batas menjawab <code>429</code> dengan header <code>Retry-After: 60</code>:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons 429</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{ "success": false, "error": "Terlalu banyak permintaan. Coba lagi sebentar." }</pre>
+          </div>
+          <p>IP klien dibaca dari header <code>CF-Connecting-IP</code> (atau entri pertama <code>X-Forwarded-For</code> bila tidak ada) saat permintaan tiba lewat Cloudflare Tunnel — batas di atas dan batas pembuatan key berlaku per pengunjung, bukan per server. Header forward diabaikan bila permintaan tidak datang dari tunnel (anti spoofing).</p>
+        </div>
+
+        <div class="doc-sec" id="doc-health">
+          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/health</span></h3>
+          <p>Status layanan + metrik. <strong>Tanpa auth</strong> (untuk monitoring).</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>curl https://ongkir.lightvela.my.id/v1/health</pre>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons 200</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{
+  "success": true,
+  "status": "ok",
+  "version": "1.1.0",
+  "uptime_s": 198,
+  "tariffs": 6,
+  "courier_places": 8,
+  "track_cached": 1,
+  "wilayah": 7837,
+  "last_harvest": "2026-11-12T11:00:04.543Z",
+  "quotes_from_db": 2,
+  "quotes_live": 2,
+  "quotes_db_pct": 50
+}</pre>
+          </div>
+          <div class="table-scroll">
+            <table class="doc">
+              <thead><tr><th>Field</th><th>Arti</th></tr></thead>
+              <tbody>
+                <tr><td><code>version</code></td><td>Versi layanan (sama dengan <code>package.json</code>)</td></tr>
+                <tr><td><code>uptime_s</code></td><td>Lama layanan jalan (detik)</td></tr>
+                <tr><td><code>tariffs</code></td><td>Jumlah baris tarif tersimpan</td></tr>
+                <tr><td><code>courier_places</code></td><td>Jumlah peta kode wilayah per kurir tersimpan</td></tr>
+                <tr><td><code>track_cached</code></td><td>Jumlah hasil lacak di cache</td></tr>
+                <tr><td><code>wilayah</code></td><td>Jumlah baris wilayah (7.837: 38 provinsi, 514 kab/kota, 7.285 kecamatan)</td></tr>
+                <tr><td><code>last_harvest</code></td><td>Waktu panen tarif terakhir (<code>null</code> bila belum pernah panen)</td></tr>
+                <tr><td><code>quotes_from_db</code></td><td>Jumlah quote ongkir yang terlayani dari DB (kumulatif, per kurir)</td></tr>
+                <tr><td><code>quotes_live</code></td><td>Jumlah quote yang harus panen live (kumulatif, per kurir)</td></tr>
+                <tr><td><code>quotes_db_pct</code></td><td>% quote dari DB, 1 desimal (<code>null</code> bila belum ada quote sama sekali)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>"Quote" dihitung <strong>per kurir per permintaan</strong> <code>/v1/cost</code>: satu permintaan dengan 5 kurir yang 4 di antaranya ada di DB menghitung <code>quotes_from_db +4</code> dan <code>quotes_live +1</code>. Kurir yang dilewati karena baru saja gagal (negative cache 1 jam) tidak dihitung di keduanya.</p>
+        </div>
+
+        <div class="doc-sec" id="doc-wilayah">
+          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/wilayah</span></h3>
+          <p>Daftar wilayah Kemendagri (kode bertitik: provinsi <code>NN</code>, kabupaten <code>NN.NN</code>, kecamatan <code>NN.NN.NN</code>).</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>curl "https://ongkir.lightvela.my.id/v1/wilayah?parent=36" \
+  -H "X-API-Key: KUNCI_ANDA"</pre>
+          </div>
+          <div class="table-scroll">
+            <table class="doc">
+              <thead><tr><th>Param</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td><code>parent</code></td><td><span class="opt">tidak</span></td><td>Kode wilayah induk. Tanpa param: daftar 38 provinsi. Dengan <code>parent</code>: anak-anak dari kode itu. Kode induk yang tidak ada menjawab <code>400</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons — GET /v1/wilayah (38 provinsi)</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{
+  "success": true,
+  "data": [
+    { "id": "11", "parent_id": null, "level": "provinsi", "name": "ACEH" },
+    { "id": "12", "parent_id": null, "level": "provinsi", "name": "SUMATERA UTARA" },
+    { "id": "13", "parent_id": null, "level": "provinsi", "name": "SUMATERA BARAT" }
+  ]
+}</pre>
+          </div>
+          <p><code>?parent=36</code> mengembalikan kabupaten di Banten; <code>?parent=36.71</code> mengembalikan kecamatan di Kota Tangerang. Nama wilayah huruf besar sesuai dataset Kemendagri.</p>
+        </div>
+
+        <div class="doc-sec" id="doc-cost">
+          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/cost</span></h3>
+          <p>Cek ongkir. Dibaca dari database sendiri; kurir yang rutenya belum ada atau sudah basi (&gt; 30 hari) dipanen live lalu disimpan.</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>curl "https://ongkir.lightvela.my.id/v1/cost?origin=36.72.01&amp;destination=32.73.01&amp;weight_g=1000&amp;courier=jne,jnt,pos" \
+  -H "X-API-Key: KUNCI_ANDA"</pre>
+          </div>
+          <div class="table-scroll">
+            <table class="doc">
+              <thead><tr><th>Param</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td><code>origin</code></td><td><span class="req">ya</span></td><td>Kode <strong>kecamatan</strong> asal (mis. <code>36.72.01</code>)</td></tr>
+                <tr><td><code>destination</code></td><td><span class="req">ya</span></td><td>Kode <strong>kecamatan</strong> tujuan (mis. <code>32.73.01</code>)</td></tr>
+                <tr><td><code>weight_g</code></td><td><span class="opt">tidak</span></td><td>Berat gram, 100–30.000 (default <code>1000</code>). Dibulatkan ke atas per kg (<code>weight_kg</code>, minimal 1).</td></tr>
+                <tr><td><code>courier</code></td><td><span class="opt">tidak</span></td><td>Daftar kurir dipisah koma. Default: semua kurir. Pilihan: <code>jne</code>, <code>jnt</code>, <code>sicepat</code>, <code>anteraja</code>, <code>pos</code>. Kurir tidak dikenal menjawab <code>400</code>.</td></tr>
+                <tr><td><code>fresh</code></td><td><span class="opt">tidak</span></td><td><code>fresh=1</code> memaksa panen live untuk semua kurir (lewati DB).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons 200 (dipersingkat — bentuk lengkap sama)</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{
+  "success": true,
+  "origin": { "code": "36.72.01", "name": "CIBEBER" },
+  "destination": { "code": "32.73.01", "name": "SUKASARI" },
+  "weight_g": 1000,
+  "weight_kg": 1,
+  "estimate": true,
+  "disclaimer": "Estimasi — harga final mengikuti tarif resmi kurir saat paket diserahkan.",
+  "options": [
+    { "courier": "pos", "courierName": "Pos Indonesia", "service": "Reguler", "price": 11700, "eta": "3-4 HARI", "fetched_at": "2026-11-12T11:00:04.543Z", "cached": true },
+    { "courier": "jne", "courierName": "JNE Express", "service": "REG", "price": 13000, "eta": "1-2 Hari", "fetched_at": "2026-11-12T11:00:04.543Z", "cached": true },
+    { "courier": "jnt", "courierName": "J&T Express", "service": "EZ", "price": 13000, "eta": "2-3 hari", "fetched_at": "2026-11-12T11:00:04.543Z", "cached": true }
+  ],
+  "errors": [
+    { "courier": "sicepat", "courierName": "SiCepat Ekspres", "error": "Lokasi tidak ditemukan di sistem SiCepat." },
+    { "courier": "anteraja", "courierName": "AnterAja", "error": "Gagal memanggil API AnterAja, HTTP 403." }
+  ]
+}</pre>
+          </div>
+          <ul>
+            <li><code>options</code> urut dari harga termurah. <code>cached: true</code> berarti harga diambil dari database (bukan panen baru); <code>cached: false</code> berarti baru dipanen live di permintaan ini.</li>
+            <li><code>fetched_at</code> = kapan harga itu terakhir dicek live ke kurir. <code>estimate: true</code> + <code>disclaimer</code> selalu ada — harga adalah estimasi.</li>
+            <li><code>errors</code> berisi kurir yang gagal di permintaan ini. Sebagian kurir gagal tidak menggagalkan respons — selama ada minimal satu opsi, status tetap <code>200</code>. Bila tidak ada satu pun opsi yang berhasil, API menjawab <code>502</code> ("Semua kurir gagal dipanen untuk rute ini.").</li>
+            <li>Layanan kargo (JTR/SPS/GOKIL) tidak pernah muncul di <code>options</code>.</li>
+          </ul>
+        </div>
+
+        <div class="doc-sec" id="doc-track">
+          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/track</span></h3>
+          <p>Cek resi live ke kurir. Hasil yang ditemukan di-cache 30 menit; <code>fresh=1</code> memaksa cek live.</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>curl "https://ongkir.lightvela.my.id/v1/track?courier=jne&amp;awb=KAJ0000000000001&amp;phone=12345" \
+  -H "X-API-Key: KUNCI_ANDA"</pre>
+          </div>
+          <div class="table-scroll">
+            <table class="doc">
+              <thead><tr><th>Param</th><th>Wajib</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td><code>courier</code></td><td><span class="req">ya</span></td><td>Salah satu: <code>jne</code>, <code>jnt</code>, <code>sicepat</code>, <code>anteraja</code>, <code>pos</code></td></tr>
+                <tr><td><code>awb</code></td><td><span class="req">ya</span></td><td>Nomor resi</td></tr>
+                <tr><td><code>phone</code></td><td><span class="req">JNE/J&amp;T</span></td><td>Digit terakhir nomor HP: <strong>JNE 5 digit</strong> (penerima), <strong>J&amp;T 4 digit</strong> (pengirim/penerima). Bila diisi lebih panjang, diambil N digit terakhir. Kurir lain: diteruskan bila diisi (SiCepat membutuhkannya untuk sebagian resi), diabaikan bila tidak.</td></tr>
+                <tr><td><code>fresh</code></td><td><span class="opt">tidak</span></td><td><code>fresh=1</code> lewati cache, paksa cek live</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons 200 — data fiktif sebagai contoh bentuk</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{
+  "success": true,
+  "courier": "jne",
+  "courierName": "JNE Express",
+  "awb": "KAJ0000000000001",
+  "status": "DELIVERED",
+  "service": "REG",
+  "sender": "Nama Pengirim",
+  "recipient": "Nama Penerima",
+  "origin": "TANGERANG",
+  "destination": "BANDUNG",
+  "events": [
+    { "time": "2026-11-10 14:22:03", "status": "", "location": "TANGERANG", "description": "SHIPMENT RECEIVED AT [TANGERANG]" },
+    { "time": "2026-11-12 15:09:18", "status": "", "location": "BANDUNG", "description": "DELIVERED TO [PENERIMA | 12-11-2026 15:09 | BANDUNG]" }
+  ],
+  "fetched_at": "2026-11-12T16:16:50.721Z",
+  "cached": false
+}</pre>
+          </div>
+          <ul>
+            <li><code>status</code> dinormalisasi ke satu dari: <code>DELIVERED</code>, <code>ON_DELIVERY</code>, <code>ON_PROCESS</code>, <code>IN_TRANSIT</code>, <code>RETURN_TO_SENDER</code>.</li>
+            <li><code>events</code> selalu urut kronologis (terlama dulu). Field <code>service</code> / <code>sender</code> / <code>recipient</code> / <code>origin</code> / <code>destination</code> / <code>status</code> per-event bisa berupa string kosong bila kurir tidak memberikannya — bentuk respons tetap stabil.</li>
+            <li>Tidak ada label <code>estimate</code>: hasil lacak adalah data live faktual dari kurir, bukan estimasi.</li>
+          </ul>
+          <h4>Pemetaan status HTTP</h4>
+          <div class="table-scroll">
+            <table class="doc">
+              <thead><tr><th>Keadaan</th><th>HTTP</th><th><code>status</code> di body</th><th>Keterangan</th></tr></thead>
+              <tbody>
+                <tr><td>Resi ditemukan</td><td>200</td><td>(status paket)</td><td>Dari live atau cache 30 menit</td></tr>
+                <tr><td>Resi tidak ditemukan</td><td>404</td><td><code>NOT_FOUND</code></td><td>Pesan jelas dari kurir</td></tr>
+                <tr><td>Resi butuh digit HP (SiCepat, <code>phone</code> tidak diisi)</td><td>400</td><td>—</td><td>+ <code>requiresPhoneVerification: true</code>, <code>digits</code></td></tr>
+                <tr><td>Digit HP ditolak kurir (J&amp;T)</td><td>400</td><td><code>WRONG_PHONE_DIGITS</code></td><td>Digit sudah diisi tapi tidak cocok</td></tr>
+                <tr><td>Verifikasi JNE gagal</td><td>404</td><td><code>VERIFICATION_FAILED</code></td><td>JNE tidak membedakan digit salah vs resi tidak ada</td></tr>
+                <tr><td>Input tidak valid (kurir/awb/phone)</td><td>400</td><td>—</td><td>Pesan menyebut digit yang dibutuhkan</td></tr>
+                <tr><td>Kurir gagal/timeout</td><td>502</td><td>—</td><td>Gangguan, BUKAN vonis resi palsu</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons 404 (resi tidak ditemukan)</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{
+  "success": false,
+  "error": "Nomor resi \"1234567890\" tidak ditemukan di sistem J&T Express. Pastikan nomor resi sudah benar.",
+  "courier": "jnt",
+  "awb": "1234567890",
+  "status": "NOT_FOUND"
+}</pre>
+          </div>
+        </div>
+
+        <div class="doc-sec" id="doc-api-keys">
+          <h3><span class="method method-post">POST</span><span class="doc-path">/v1/api-keys</span></h3>
+          <p>Membuat API key baru. <strong>Tanpa auth</strong> — konsol dibuka terbatas untuk publik agar siapa pun bisa mencoba API sendiri. Key hanya ditampilkan sekali di respons; server tidak bisa menampilkannya lagi nanti, jadi simpan segera.</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>curl -X POST https://ongkir.lightvela.my.id/v1/api-keys \
+  -H "Content-Type: application/json" \
+  -d '{ "label": "kunci tes" }'</pre>
+          </div>
+          <p>Body boleh kosong; <code>label</code> opsional (teks, maks 100 karakter). Respons <code>201</code>:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Contoh respons 201</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>{
+  "success": true,
+  "api_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "label": "kunci tes",
+  "created_at": "2026-11-13T09:00:00.000Z",
+  "note": "Simpan kunci ini — hanya ditampilkan sekali."
+}</pre>
+          </div>
+          <p>(<code>api_key</code> di atas hanya contoh bentuk — 64 karakter hex.)</p>
+          <div class="note"><strong>Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam.</strong> Melewati batas menjawab <code>429</code>. Rate limit 60 permintaan/menit/IP tetap berlaku untuk semua key, termasuk key yang baru dibuat.</div>
+        </div>
+
+        <div class="doc-sec" id="doc-errors">
+          <h3>Kode error (semua endpoint)</h3>
+          <div class="table-scroll">
+            <table class="doc">
+              <thead><tr><th>HTTP</th><th>Arti</th><th>Contoh pemicu</th></tr></thead>
+              <tbody>
+                <tr><td><code>400</code></td><td>Input tidak valid</td><td>Kode wilayah bukan kecamatan, <code>weight_g</code> di luar 100–30.000, kurir tidak dikenal, digit HP kurang</td></tr>
+                <tr><td><code>401</code></td><td>API key tidak valid</td><td>Header <code>X-API-Key</code> tidak ada / salah / dicabut (tidak berlaku untuk <code>/v1/health</code> dan <code>POST /v1/api-keys</code>)</td></tr>
+                <tr><td><code>404</code></td><td>Tidak ditemukan</td><td>Rute tidak dikenal, resi tidak ditemukan, verifikasi JNE gagal</td></tr>
+                <tr><td><code>405</code></td><td>Metode tidak didukung</td><td>Selain <code>GET</code> (kecuali <code>POST /v1/api-keys</code>)</td></tr>
+                <tr><td><code>429</code></td><td>Rate limit</td><td>&gt; 60 permintaan/menit/IP, atau &gt; 3 pembuatan key baru per IP per 24 jam</td></tr>
+                <tr><td><code>500</code></td><td>Kesalahan internal</td><td>—</td></tr>
+                <tr><td><code>502</code></td><td>Kurir gagal</td><td>Semua kurir gagal dipanen (cost) atau kurir gagal/timeout (track)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="doc-sec" id="doc-catatan">
+          <h3>Catatan penting</h3>
+          <ul>
+            <li><strong>Harga adalah estimasi.</strong> Tarif disimpan di database dan dianggap segar 30 hari; harga final mengikuti tarif resmi kurir saat paket diserahkan. Selalu tampilkan <code>disclaimer</code> dan <code>fetched_at</code> ke pengguna akhir. Cron refresh + spot-check harian menjaga harga tetap dekat dengan tarif live.</li>
+            <li><strong>AnterAja ongkir masih 403.</strong> API ongkir AnterAja menolak permintaan dari IP layanan (403) — kurir ini muncul di <code>errors</code> pada <code>/v1/cost</code>. Tracking AnterAja (<code>/v1/track</code>) TIDAK terblokir.</li>
+            <li><strong>JNE tidak membedakan resi tidak ada vs digit HP salah.</strong> Keduanya kembali sebagai <code>VERIFICATION_FAILED</code> (404). Bila mendapat status ini, periksa kembali nomor resi DAN 5 digit terakhir HP penerima.</li>
+            <li><strong>SiCepat tracking kadang lambat.</strong> Sekali waktu SiCepat menggantung lama (aliran reCAPTCHA); API memakai timeout keras 20 detik + retry, jadi satu kurir tidak menggantung respons — kegagalan muncul sebagai <code>502</code> (track) atau entri <code>errors</code> (cost), bukan hang.</li>
+            <li><strong>Cache cek resi 30 menit</strong>, hanya untuk hasil "ditemukan". Resi tidak ditemukan / error tidak di-cache agar percobaan berikutnya selalu cek live lagi.</li>
+            <li><strong>Jangan kirim nomor HP lengkap</strong> ke <code>/v1/track</code> — cukup digit terakhir yang diminta (JNE 5, J&amp;T 4). Bila terlanjur mengirim nomor lengkap, API hanya memakai N digit terakhir.</li>
+          </ul>
+        </div>
+      </section>
+
+    </main>
+
+    <footer style="max-width: 960px; margin: 0 auto; width: 100%; padding: 20px 16px 32px;">
+      <p>OpenOngkir v1 — halaman ini memanggil endpoint <code>/v1/health</code>, <code>/v1/wilayah</code>, <code>/v1/cost</code>, <code>/v1/track</code>, dan <code>/v1/api-keys</code> di server yang sama.</p>
+      <p>Harga ongkir adalah estimasi dari database tarif yang dipanen dari endpoint resmi kurir.</p>
+    </footer>
   </div>
-</div>
-
-<div class="wrap">
-  <header class="hero">
-    <h1>Cek ongkir &amp; lacak resi, <span class="accent">tanpa perantara.</span></h1>
-    <p>OpenOngkir menyimpan database tarif sendiri yang dipanen langsung dari kurir resmi — jadi harga bisa dicek tanpa layanan agregator pihak ketiga. Semua harga adalah estimasi.</p>
-  </header>
-
-  <section class="card key-card" id="kunci" aria-label="API key">
-    <div id="key-none">
-      <div class="key-head">
-        <div>
-          <h2>API key</h2>
-          <p>Cek ongkir dan lacak resi butuh API key. Buat satu gratis — maksimal 3 kunci baru per 24 jam.</p>
-        </div>
-        <div class="key-actions">
-          <button type="button" id="key-create" class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><span>Buat API key gratis</span></button>
-        </div>
-      </div>
-      <details class="paste" id="key-paste-wrap">
-        <summary>Punya key? Tempel di sini <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <form id="key-form" class="paste-form">
-          <div class="field">
-            <label for="api-key">Kunci API</label>
-            <input type="password" id="api-key" name="api-key" autocomplete="off" placeholder="Tempel kunci API di sini">
-          </div>
-          <button type="submit" class="btn btn-secondary">Simpan</button>
-        </form>
-      </details>
-      <p class="hint key-status" id="key-status" aria-live="polite"></p>
-    </div>
-    <div id="key-saved" hidden>
-      <div class="key-head">
-        <div class="key-saved">
-          <span class="ok-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-          <span>API key tersimpan di browser ini.</span>
-        </div>
-        <div class="key-actions">
-          <button type="button" id="key-change" class="btn btn-secondary btn-sm">Ganti key</button>
-          <button type="button" id="key-forget" class="btn btn-secondary btn-sm">Lupakan</button>
-        </div>
-      </div>
-      <p class="hint key-status">Kunci hanya disimpan di browser ini dan hanya dikirim ke API OpenOngkir.</p>
-    </div>
-    <div id="key-created" hidden>
-      <div class="key-new-block">
-        <p><strong>Kunci baru — simpan sekarang, hanya ditampilkan sekali.</strong> Kunci ini sudah otomatis tersimpan di browser ini.</p>
-        <div class="row">
-          <input type="text" id="key-new" readonly aria-label="API key baru">
-          <button type="button" id="key-copy" class="btn btn-secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Salin</span></button>
-        </div>
-      </div>
-    </div>
-    <div id="key-create-error"></div>
-  </section>
-
-  <section class="card tool-card" aria-label="Alat cek ongkir dan lacak resi">
-    <div class="tabs" role="tablist" aria-label="Pilih alat">
-      <button type="button" class="tab" id="tab-cost" role="tab" aria-selected="true" aria-controls="panel-cost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>Cek ongkir</button>
-      <button type="button" class="tab" id="tab-track" role="tab" aria-selected="false" aria-controls="panel-track" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lacak resi</span></button>
-    </div>
-
-    <div class="panel" id="panel-cost" role="tabpanel" aria-labelledby="tab-cost">
-      <form id="cost-form">
-        <div class="grid-2">
-          <div>
-            <p class="place-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Asal</p>
-            <div class="field">
-              <label for="origin-prov">Provinsi</label>
-              <select id="origin-prov" name="origin-prov"></select>
-            </div>
-            <div class="field">
-              <label for="origin-kab">Kab/Kota</label>
-              <select id="origin-kab" name="origin-kab" disabled></select>
-            </div>
-            <div class="field">
-              <label for="origin-kec">Kecamatan</label>
-              <select id="origin-kec" name="origin-kec" disabled></select>
-            </div>
-          </div>
-          <div>
-            <p class="place-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Tujuan</p>
-            <div class="field">
-              <label for="dest-prov">Provinsi</label>
-              <select id="dest-prov" name="dest-prov"></select>
-            </div>
-            <div class="field">
-              <label for="dest-kab">Kab/Kota</label>
-              <select id="dest-kab" name="dest-kab" disabled></select>
-            </div>
-            <div class="field">
-              <label for="dest-kec">Kecamatan</label>
-              <select id="dest-kec" name="dest-kec" disabled></select>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label for="weight">Berat (gram)</label>
-          <input type="number" id="weight" name="weight" value="1000" min="100" max="30000" step="1" inputmode="numeric">
-        </div>
-        <fieldset>
-          <legend>Kurir</legend>
-          <div class="chips" id="courier-checks"></div>
-        </fieldset>
-        <label class="check"><input type="checkbox" class="plain" id="cost-fresh"> Panen ulang dari kurir (fresh=1, abaikan DB)</label>
-        <div class="submit-row">
-          <button type="submit" class="btn btn-primary btn-block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Cek ongkir</span></button>
-        </div>
-      </form>
-      <div class="result-area" id="cost-result">
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
-          <div>Belum ada hasil — isi asal, tujuan, dan berat, lalu tekan Cek ongkir.</div>
-        </div>
-      </div>
-      <details class="raw" id="cost-raw-wrap" hidden>
-        <summary>Respons JSON <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <pre id="cost-raw"></pre>
-      </details>
-    </div>
-
-    <div class="panel" id="panel-track" role="tabpanel" aria-labelledby="tab-track" hidden>
-      <form id="track-form">
-        <div class="field">
-          <label for="track-courier">Kurir</label>
-          <select id="track-courier" name="track-courier"></select>
-        </div>
-        <div class="field">
-          <label for="awb">Nomor resi</label>
-          <input type="text" id="awb" name="awb" autocomplete="off" placeholder="Nomor resi" autocapitalize="characters">
-        </div>
-        <div class="field">
-          <label for="phone">Digit terakhir HP penerima</label>
-          <input type="text" id="phone" name="phone" autocomplete="off" inputmode="numeric" placeholder="JNE: 5 digit, J&amp;T: 4 digit">
-          <p class="hint">JNE butuh 5 digit terakhir, J&amp;T 4 digit terakhir nomor HP penerima. Kurir lain tidak butuh digit ini.</p>
-        </div>
-        <label class="check"><input type="checkbox" class="plain" id="track-fresh"> Tanya ulang ke kurir (fresh=1, abaikan cache)</label>
-        <div class="submit-row">
-          <button type="submit" class="btn btn-primary btn-block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lacak resi</span></button>
-        </div>
-      </form>
-      <div class="result-area" id="track-result">
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          <div>Belum ada hasil — isi kurir dan nomor resi, lalu tekan Lacak resi.</div>
-        </div>
-      </div>
-      <details class="raw" id="track-raw-wrap" hidden>
-        <summary>Respons JSON <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <pre id="track-raw"></pre>
-      </details>
-    </div>
-  </section>
-
-  <details class="card status-card" id="health">
-    <summary>Status layanan <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-    <div class="status-body">
-      <div class="row">
-        <button type="button" id="health-refresh" class="btn btn-secondary btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Muat ulang</button>
-        <span class="hint">Tidak butuh API key.</span>
-      </div>
-      <div id="health-result"><p class="hint">Memuat…</p></div>
-    </div>
-  </details>
-
-  <footer>
-    <p>OpenOngkir v1 — halaman ini memanggil endpoint <code>/v1/health</code>, <code>/v1/wilayah</code>, <code>/v1/cost</code>, dan <code>/v1/track</code> di server yang sama. Dokumentasi lengkap: <code>docs/API.md</code>.</p>
-    <p>Harga ongkir adalah estimasi dari database tarif yang dipanen dari endpoint resmi kurir.</p>
-  </footer>
 </div>
 
 <script>
@@ -657,6 +1203,13 @@ const STATUS_ID = {
   IN_TRANSIT: 'Dalam perjalanan',
   ON_PROCESS: 'Diproses',
   RETURN_TO_SENDER: 'Dikembalikan ke pengirim',
+};
+const VIEWS = {
+  overview: 'Overview',
+  'cek-ongkir': 'Cek Ongkir',
+  'lacak-resi': 'Lacak Resi',
+  'api-keys': 'API Keys',
+  dokumentasi: 'Dokumentasi',
 };
 const $ = (id) => document.getElementById(id);
 const rp = new Intl.NumberFormat('id-ID');
@@ -716,32 +1269,98 @@ function setLoading(btn, on, label) {
   }
 }
 
-// ---- Tab Cek ongkir / Lacak resi ----
-const TABS = [$('tab-cost'), $('tab-track')];
-function selectTab(tab) {
-  for (const t of TABS) {
-    const selected = t === tab;
-    t.setAttribute('aria-selected', String(selected));
-    t.tabIndex = selected ? 0 : -1;
-    $(t.getAttribute('aria-controls')).hidden = !selected;
+// ---- Router hash: #/bagian[/anchor-dokumen] ----
+function parseHash() {
+  const h = location.hash.replace(/^#\/?/, '');
+  const [view, sub] = h.split('/');
+  return { view: VIEWS[view] ? view : 'overview', sub: sub || null };
+}
+function route() {
+  const { view, sub } = parseHash();
+  for (const name of Object.keys(VIEWS)) {
+    $('view-' + name).hidden = name !== view;
+    const link = document.querySelector('[data-nav="' + name + '"]');
+    if (link) {
+      if (name === view) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    }
+  }
+  $('page-title').textContent = VIEWS[view];
+  document.title = 'OpenOngkir — ' + VIEWS[view];
+  closeSidebar();
+  window.scrollTo(0, 0);
+  if (view === 'dokumentasi' && sub) {
+    const target = document.getElementById('doc-' + sub);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
-for (const t of TABS) {
-  t.addEventListener('click', () => selectTab(t));
-  t.addEventListener('keydown', (e) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    e.preventDefault();
-    const next = t === TABS[0] ? TABS[1] : TABS[0];
-    selectTab(next);
-    next.focus();
-  });
+window.addEventListener('hashchange', route);
+
+// ---- Sidebar mobile: hamburger, overlay, Escape, fokus ----
+const sidebar = $('sidebar');
+const overlay = $('overlay');
+const menuBtn = $('menu-btn');
+function sidebarOpen() { return sidebar.classList.contains('open'); }
+function openSidebar() {
+  sidebar.classList.add('open');
+  overlay.hidden = false;
+  menuBtn.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('no-scroll');
+  const first = sidebar.querySelector('[data-nav]');
+  if (first) first.focus();
 }
+function closeSidebar() {
+  if (!sidebarOpen()) return;
+  sidebar.classList.remove('open');
+  overlay.hidden = true;
+  menuBtn.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('no-scroll');
+  menuBtn.focus();
+}
+menuBtn.addEventListener('click', openSidebar);
+$('side-close').addEventListener('click', closeSidebar);
+overlay.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeSidebar();
+});
+sidebar.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab' || !sidebarOpen()) return;
+  const focusable = [...sidebar.querySelectorAll('a[href], button:not([disabled])')].filter((el) => el.offsetParent !== null);
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
+// ---- Tombol salin di blok kode dokumentasi ----
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-copy]');
+  if (!btn) return;
+  const pre = btn.closest('.codeblock').querySelector('pre');
+  if (!pre) return;
+  try {
+    await navigator.clipboard.writeText(pre.textContent);
+  } catch {
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(pre);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+  }
+  btn.textContent = 'Tersalin';
+  setTimeout(() => { btn.textContent = 'Salin'; }, 2000);
+});
 
 // ---- API key ----
 function refreshKeyStatus() {
   const saved = Boolean(getKey());
   $('key-none').hidden = saved;
   $('key-saved').hidden = !saved;
+  $('overview-key-none').hidden = saved;
+  $('overview-key-saved').hidden = !saved;
   if (!saved) {
     $('key-status').textContent = 'Belum ada API key tersimpan.';
     $('api-key').value = '';
@@ -810,13 +1429,13 @@ $('key-copy').addEventListener('click', async (e) => {
 
 // ---- Health (tanpa key) ----
 async function loadHealth() {
-  $('health-result').innerHTML = '<p class="hint">Memuat…</p>';
+  $('overview-stats').innerHTML = '<p class="hint">Memuat…</p>';
   try {
     const b = await api('/v1/health', false);
     const pct = b.quotes_db_pct == null ? 'belum ada quote' : b.quotes_db_pct + '%';
     $('status-pill').classList.remove('is-down');
     $('status-pill-text').textContent = 'Live · v' + b.version;
-    $('health-result').innerHTML =
+    $('overview-stats').innerHTML =
       '<dl class="stats wide">' +
       '<dt>Versi</dt><dd>' + esc(b.version) + '</dd>' +
       '<dt>Status</dt><dd>' + esc(b.status) + '</dd>' +
@@ -832,7 +1451,7 @@ async function loadHealth() {
   } catch (err) {
     $('status-pill').classList.add('is-down');
     $('status-pill-text').textContent = 'Tidak terjangkau';
-    $('health-result').innerHTML = errorBox(err);
+    $('overview-stats').innerHTML = errorBox(err);
   }
 }
 $('health-refresh').addEventListener('click', loadHealth);
@@ -1012,6 +1631,7 @@ setupCascade('dest', $('cost-result'));
 refreshKeyStatus();
 loadHealth();
 loadProvinces();
+route();
 </script>
 </body>
 </html>
