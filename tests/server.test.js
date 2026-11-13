@@ -63,6 +63,7 @@ describe('server', () => {
     assert.match(body, /Konsol Tes OpenOngkir/);
     assert.match(body, /id="cost-form"/);
     assert.match(body, /id="track-form"/);
+    assert.match(body, /Buat API key/);
   });
 
   it('tanpa API key = 401', async () => {

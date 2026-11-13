@@ -161,7 +161,19 @@
     <button type="submit" class="btn-primary">Simpan</button>
     <button type="button" id="key-forget" class="btn-secondary">Lupakan</button>
   </form>
-  <p class="hint" style="margin-top: 10px;">Kunci ada di file <code>.env</code> di server (<code>~/OpenOngkir/.env</code>, variabel <code>OPENONGKIR_API_KEY</code>). Kunci disimpan di browser ini saja (localStorage) dan hanya dikirim ke API OpenOngkir.</p>
+  <p class="hint" style="margin-top: 10px;">Kunci disimpan di browser ini saja (localStorage) dan hanya dikirim ke API OpenOngkir. Belum punya kunci? Buat satu di bawah — atau pakai kunci master dari file <code>.env</code> di server (<code>~/OpenOngkir/.env</code>, variabel <code>OPENONGKIR_API_KEY</code>).</p>
+  <div class="row" style="margin-top: 12px;">
+    <button type="button" id="key-create" class="btn-secondary">Buat API key</button>
+    <span class="hint">Maksimal 3 kunci baru per 24 jam.</span>
+  </div>
+  <div id="key-created" hidden>
+    <p class="hint" style="margin-top: 12px;"><strong>Kunci baru — simpan sekarang, hanya ditampilkan sekali.</strong> Kunci ini sudah otomatis tersimpan di browser ini.</p>
+    <div class="row">
+      <input type="text" id="key-new" readonly style="flex: 1 1 260px;" aria-label="API key baru">
+      <button type="button" id="key-copy" class="btn-secondary">Salin</button>
+    </div>
+  </div>
+  <div id="key-create-error"></div>
   <p id="key-status" class="hint" aria-live="polite"></p>
 </section>
 
@@ -341,6 +353,45 @@ $('key-forget').addEventListener('click', () => {
   localStorage.removeItem(KEY_NAME);
   refreshKeyStatus();
   disableCascades('Isi API key dulu');
+});
+
+// ---- Buat API key baru (tanpa auth, dibatasi 3/IP/24 jam) ----
+$('key-create').addEventListener('click', async () => {
+  const btn = $('key-create');
+  btn.disabled = true;
+  btn.textContent = 'Membuat…';
+  $('key-create-error').innerHTML = '';
+  $('key-created').hidden = true;
+  try {
+    const res = await fetch('/v1/api-keys', { method: 'POST' });
+    const b = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(b.error || ('HTTP ' + res.status));
+      err.status = res.status;
+      throw err;
+    }
+    localStorage.setItem(KEY_NAME, b.api_key);
+    $('key-new').value = b.api_key;
+    $('key-created').hidden = false;
+    refreshKeyStatus();
+    loadProvinces();
+  } catch (err) {
+    $('key-create-error').innerHTML = errorBox(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Buat API key';
+  }
+});
+$('key-copy').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText($('key-new').value);
+  } catch {
+    $('key-new').select();
+    document.execCommand('copy');
+  }
+  btn.textContent = 'Tersalin';
+  setTimeout(() => { btn.textContent = 'Salin'; }, 2000);
 });
 
 // ---- Health (tanpa key) ----

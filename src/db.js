@@ -31,6 +31,7 @@ export function openDb(dbPath) {
   db.exec(readSql('schema-tarif.sql'));
   db.exec(readSql('schema-track.sql'));
   db.exec(readSql('schema-stats.sql'));
+  db.exec(readSql('schema-api-keys.sql'));
 
   // Seed wilayah sekali, bila tabel masih kosong.
   const { count } = db.prepare('SELECT COUNT(*) AS count FROM wilayah').get();
@@ -262,6 +263,38 @@ export class OpenOngkirDb {
       if (row.name === 'live') out.live = row.count;
     }
     return out;
+  }
+
+  // ---- api_keys (generate key publik terbatas) ----
+
+  /** Simpan key baru (hanya hash-nya; key asli tidak pernah disimpan). */
+  saveApiKey(keyHash, label, ip, createdAt = Date.now()) {
+    this.db
+      .prepare(
+        'INSERT INTO api_keys (key_hash, label, ip, created_at) VALUES (?, ?, ?, ?)'
+      )
+      .run(keyHash, label, ip, createdAt);
+  }
+
+  /** Baris key dari hash-nya, atau null bila tidak ada. */
+  getApiKey(keyHash) {
+    return (
+      this.db.prepare('SELECT * FROM api_keys WHERE key_hash = ?').get(keyHash) || null
+    );
+  }
+
+  /** Jumlah key yang dibuat satu IP sejak sinceMs (batas pembuatan). */
+  countApiKeysByIp(ip, sinceMs) {
+    return this.db
+      .prepare('SELECT COUNT(*) AS c FROM api_keys WHERE ip = ? AND created_at >= ?')
+      .get(ip, sinceMs).c;
+  }
+
+  /** Cabut key (revoked=1) — key langsung ditolak 401. */
+  revokeApiKey(keyHash) {
+    this.db
+      .prepare('UPDATE api_keys SET revoked = 1 WHERE key_hash = ?')
+      .run(keyHash);
   }
 
   // ---- harvest_log ----

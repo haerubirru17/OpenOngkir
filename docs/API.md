@@ -7,7 +7,8 @@ cek resi selalu live ke kurir.
 
 - **Base URL:** `https://ongkir.lightvela.my.id`
 - **Versi API:** v1 (semua endpoint di bawah `/v1/`)
-- **Metode:** hanya `GET`. Metode lain menjawab `405`.
+- **Metode:** `GET`, kecuali `POST /v1/api-keys` untuk membuat kunci.
+  Metode lain menjawab `405`.
 - **Format:** JSON (`Content-Type: application/json; charset=utf-8`).
   Respons sukses selalu diawali `"success": true`; respons gagal
   `"success": false` + `"error"` berisi pesan yang bisa ditampilkan.
@@ -18,13 +19,16 @@ Untuk mengetes API dari browser tanpa curl, buka `/test` di base URL
 (mis. `https://ongkir.lightvela.my.id/test`). Halaman ini tidak butuh
 auth untuk dibuka, tapi tiap panggilan API dari halaman memakai
 `X-API-Key` yang diisi di halaman (tersimpan di localStorage browser).
-Konsol ini bisa cek ongkir (dengan pemilih wilayah berjenjang), cek
-resi (dengan timeline perjalanan), dan menampilkan status layanan +
-respons JSON mentah tiap tes.
+Belum punya kunci? Konsol bisa membuatkan satu lewat tombol
+"Buat API key" (lihat "POST /v1/api-keys" di bawah). Konsol ini bisa
+cek ongkir (dengan pemilih wilayah berjenjang), cek resi (dengan
+timeline perjalanan), dan menampilkan status layanan + respons JSON
+mentah tiap tes.
 
 ## Autentikasi
 
-Semua endpoint kecuali `/v1/health` wajib mengirim header:
+Semua endpoint kecuali `/v1/health` dan `POST /v1/api-keys` wajib
+mengirim header:
 
 ```
 X-API-Key: <kunci>
@@ -35,6 +39,50 @@ Tanpa header ini, atau kunci salah, API menjawab `401`:
 ```json
 { "success": false, "error": "API key tidak valid. Kirim header X-API-Key." }
 ```
+
+Kunci yang diterima ada dua jenis: master key dari env
+`OPENONGKIR_API_KEY` di server, dan key yang dibuat lewat
+`POST /v1/api-keys` (disimpan server sebagai hash SHA-256 — key
+aslinya tidak pernah disimpan). Key yang dicabut ditolak `401`.
+
+## POST /v1/api-keys
+
+Membuat API key baru. **Tanpa auth** — konsol `/test` dibuka
+terbatas untuk publik agar siapa pun bisa mencoba API sendiri.
+Key hanya ditampilkan sekali di respons; server tidak bisa
+menampilkannya lagi nanti, jadi simpan segera.
+
+```
+POST /v1/api-keys
+Content-Type: application/json
+
+{ "label": "kunci tes" }
+```
+
+Body boleh kosong; `label` opsional (teks, maks 100 karakter).
+Respons `201`:
+
+```json
+{
+  "success": true,
+  "api_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "label": "kunci tes",
+  "created_at": "2026-11-13T09:00:00.000Z",
+  "note": "Simpan kunci ini — hanya ditampilkan sekali."
+}
+```
+
+(`api_key` di atas hanya contoh bentuk — 64 karakter hex.)
+
+**Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam.**
+Melewati batas menjawab `429`:
+
+```json
+{ "success": false, "error": "Batas pembuatan API key tercapai: maksimal 3 kunci baru per 24 jam dari IP ini. Coba lagi besok." }
+```
+
+Rate limit 60 permintaan/menit/IP tetap berlaku untuk semua key,
+termasuk key yang baru dibuat.
 
 ## Rate limit
 
@@ -58,7 +106,7 @@ GET /v1/health
 {
   "success": true,
   "status": "ok",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "uptime_s": 198,
   "tariffs": 6,
   "courier_places": 8,
@@ -257,10 +305,10 @@ Contoh respons 404 (resi tidak ditemukan):
 | HTTP | Arti | Contoh pemicu |
 |---|---|---|
 | 400 | Input tidak valid | Kode wilayah bukan kecamatan, `weight_g` di luar 100–30.000, kurir tidak dikenal, digit HP kurang |
-| 401 | API key tidak valid | Header `X-API-Key` tidak ada / salah (tidak berlaku untuk `/v1/health`) |
+| 401 | API key tidak valid | Header `X-API-Key` tidak ada / salah / dicabut (tidak berlaku untuk `/v1/health` dan `POST /v1/api-keys`) |
 | 404 | Tidak ditemukan | Rute tidak dikenal, resi tidak ditemukan, verifikasi JNE gagal |
-| 405 | Metode tidak didukung | Selain `GET` |
-| 429 | Rate limit | > 60 permintaan/menit/IP |
+| 405 | Metode tidak didukung | Selain `GET` (kecuali `POST /v1/api-keys`) |
+| 429 | Rate limit | > 60 permintaan/menit/IP, atau > 3 pembuatan key baru per IP per 24 jam |
 | 500 | Kesalahan internal | — |
 | 502 | Kurir gagal | Semua kurir gagal dipanen (cost) atau kurir gagal/timeout (track) |
 

@@ -9,7 +9,9 @@ disentuh — Berbirru (atau siapa pun) tinggal memanggil API OpenOngkir.
 Layanan live: <https://ongkir.lightvela.my.id> — dokumentasi API untuk
 konsumen: [`docs/API.md`](docs/API.md). Konsol tes di browser:
 [`/test`](https://ongkir.lightvela.my.id/test) — cek ongkir dan cek resi
-tanpa curl (butuh API key dari `.env` di server).
+tanpa curl; API key bisa dibuat langsung dari konsol (tombol
+"Buat API key", maks 3 per IP per 24 jam) atau pakai kunci master
+dari `.env` di server.
 
 ## Cara kerja
 
@@ -46,7 +48,8 @@ OPENONGKIR_API_KEY=<kunci-acak> node src/server.js
 Butuh Node ≥ 24. API: `GET /v1/wilayah?parent=`,
 `GET /v1/cost?origin=&destination=&weight_g=&courier=&fresh=1`,
 `GET /v1/track?courier=&awb=&phone=&fresh=1`,
-`GET /v1/health`. Semua endpoint kecuali `/v1/health` butuh header
+`GET /v1/health`, `POST /v1/api-keys` (buat key baru, maks 3/IP/24 jam).
+Semua endpoint kecuali `/v1/health` dan `POST /v1/api-keys` butuh header
 `X-API-Key`. Dokumentasi API lengkap: `docs/API.md`. Laporan per
 fase: `docs/FASE-2.md`, `docs/FASE-3.md`, `docs/FASE-4.md`.
 

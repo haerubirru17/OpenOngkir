@@ -5,12 +5,15 @@
 //   GET /v1/track?courier=&awb=&phone=&fresh=1
 //   GET /v1/health                   status layanan (tanpa auth, untuk monitoring)
 //   GET /test                        konsol tes di browser (tanpa auth, halaman statis)
+//   POST /v1/api-keys                buat API key baru (tanpa auth, maks 3/IP/24 jam)
 //
-// Auth (kecuali /v1/health): header X-API-Key, kunci dari env
-// OPENONGKIR_API_KEY. Bila env tidak diset, kunci acak dibuat saat start
-// dan dicetak ke stdout. Rate limit: 60 permintaan/menit/IP.
+// Auth (kecuali /v1/health, /test, POST /v1/api-keys): header X-API-Key.
+// Kunci yang diterima: master key env OPENONGKIR_API_KEY, atau key yang
+// dibuat lewat POST /v1/api-keys (disimpan sebagai hash SHA-256).
+// Bila env tidak diset, kunci acak dibuat saat start dan dicetak ke stdout.
+// Rate limit: 60 permintaan/menit/IP.
 import http from 'node:http';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +30,10 @@ const RATE_LIMIT_PER_MIN = 60;
 const RATE_WINDOW_MS = 60_000;
 const MIN_WEIGHT_G = 100;
 const MAX_WEIGHT_G = 30_000;
+// Pembuatan API key publik (POST /v1/api-keys): anti borong key.
+const API_KEY_CREATE_MAX_PER_DAY = 3;
+const API_KEY_CREATE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const MAX_JSON_BODY_BYTES = 10_000;
 
 const DISCLAIMER =
   'Estimasi — harga final mengikuti tarif resmi kurir saat paket diserahkan.';
@@ -51,6 +58,42 @@ function parseCouriers(param) {
   return [...new Set(list)];
 }
 
+/** SHA-256 hex dari sebuah API key (yang disimpan di DB hanya hash-nya). */
+function hashApiKey(key) {
+  return createHash('sha256').update(key).digest('hex');
+}
+
+/** Perbandingan string timing-safe (panjang beda = langsung tidak sama). */
+function safeEqual(a, b) {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}
+
+/** Baca body JSON (kosong = {}). Throw {status, message} bila tidak valid. */
+async function readJsonBody(req) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > MAX_JSON_BODY_BYTES) throw { status: 413, message: 'Body terlalu besar.' };
+    chunks.push(chunk);
+  }
+  const text = Buffer.concat(chunks).toString('utf8').trim();
+  if (!text) return {};
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw { status: 400, message: 'Body harus JSON yang valid.' };
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw { status: 400, message: 'Body harus objek JSON.' };
+  }
+  return parsed;
+}
+
 export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin = RATE_LIMIT_PER_MIN } = {}) {
   const startedAt = Date.now();
   const track = tracker || createTracker({ db });
@@ -72,6 +115,15 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
     return true;
   }
 
+  // Key valid bila: master key env, ATAU hash-nya ada di api_keys dan
+  // belum dicabut. Perbandingan master key timing-safe.
+  function isValidApiKey(presented) {
+    if (!presented || typeof presented !== 'string') return false;
+    if (apiKey && safeEqual(presented, apiKey)) return true;
+    const row = db.getApiKey(hashApiKey(presented));
+    return Boolean(row && !row.revoked);
+  }
+
   const server = http.createServer(async (req, res) => {
     try {
       const ip = req.socket.remoteAddress || 'unknown';
@@ -82,18 +134,56 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
       const url = new URL(req.url, 'http://localhost');
       const path = url.pathname;
 
-      if (req.method !== 'GET') {
-        json(res, 405, { success: false, error: 'Hanya metode GET yang didukung.' });
+      // Satu-satunya POST yang didukung: membuat API key baru.
+      const isCreateKey = req.method === 'POST' && path === '/v1/api-keys';
+      if (req.method !== 'GET' && !isCreateKey) {
+        json(res, 405, { success: false, error: 'Metode tidak didukung untuk rute ini.' });
         return;
       }
 
       // /v1/health sengaja tanpa auth (untuk monitoring / Uptime Kuma);
-      // /test juga tanpa auth (halaman statis — API key dimasukkan di halaman).
-      if (path !== '/v1/health' && path !== '/test') {
-        if (!apiKey || req.headers['x-api-key'] !== apiKey) {
+      // /test juga tanpa auth (halaman statis — API key dimasukkan di halaman);
+      // POST /v1/api-keys tanpa auth (pembuatan key publik, dibatasi per IP).
+      if (path !== '/v1/health' && path !== '/test' && !isCreateKey) {
+        if (!isValidApiKey(req.headers['x-api-key'])) {
           json(res, 401, { success: false, error: 'API key tidak valid. Kirim header X-API-Key.' });
           return;
         }
+      }
+
+      if (isCreateKey) {
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (e) {
+          json(res, e.status || 400, { success: false, error: e.message || 'Body tidak valid.' });
+          return;
+        }
+        let label = body.label ?? null;
+        if (label !== null && typeof label !== 'string') {
+          json(res, 400, { success: false, error: 'Label harus berupa teks.' });
+          return;
+        }
+        label = label ? label.trim().slice(0, 100) || null : null;
+        const since = Date.now() - API_KEY_CREATE_WINDOW_MS;
+        if (db.countApiKeysByIp(ip, since) >= API_KEY_CREATE_MAX_PER_DAY) {
+          json(res, 429, {
+            success: false,
+            error: 'Batas pembuatan API key tercapai: maksimal 3 kunci baru per 24 jam dari IP ini. Coba lagi besok.',
+          });
+          return;
+        }
+        const key = randomBytes(32).toString('hex');
+        const createdAt = Date.now();
+        db.saveApiKey(hashApiKey(key), label, ip, createdAt);
+        json(res, 201, {
+          success: true,
+          api_key: key,
+          label,
+          created_at: new Date(createdAt).toISOString(),
+          note: 'Simpan kunci ini — hanya ditampilkan sekali.',
+        });
+        return;
       }
 
       if (path === '/test') {
