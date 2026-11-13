@@ -60,7 +60,7 @@ describe('server', () => {
     assert.equal(res.status, 200);
     assert.match(res.headers.get('content-type'), /text\/html/);
     const body = await res.text();
-    assert.match(body, /Konsol Tes OpenOngkir/);
+    assert.match(body, /OpenOngkir — Cek Ongkir &amp; Lacak Resi/);
     assert.match(body, /id="cost-form"/);
     assert.match(body, /id="track-form"/);
     assert.match(body, /Buat API key/);

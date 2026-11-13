@@ -3,269 +3,643 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Konsol Tes OpenOngkir</title>
+<meta name="description" content="OpenOngkir — cek ongkir dan lacak resi dari database tarif sendiri, langsung dari kurir resmi, tanpa agregator pihak ketiga.">
+<title>OpenOngkir — Cek Ongkir &amp; Lacak Resi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #1a1a1a;
-    --muted: #5c5c5c;
-    --line: #e3e3e0;
-    --field-border: #c9c9c9;
-    --accent: #166534;
-    --accent-soft: #e8f5ec;
+    --ink: #1b1b18;
+    --muted: #5c5c57;
+    --paper: #fafaf7;
+    --surface: #ffffff;
+    --line: #e4e2db;
+    --field-border: #c9c7be;
+    --green: #166534;
+    --green-deep: #14532d;
+    --green-soft: #e9f4ec;
+    --amber: #92400e;
+    --amber-soft: #fdf3e3;
     --danger: #b91c1c;
     --danger-soft: #fdf2f2;
-    --amber: #92400e;
-    --amber-soft: #fdf6ec;
-    --pre-bg: #f7f7f5;
+    --pre-bg: #f4f3ef;
+    --chip-bg: #f0efea;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-card: 0 1px 2px rgba(27, 27, 24, 0.05), 0 8px 24px rgba(27, 27, 24, 0.04);
+    --shadow-tab: 0 1px 3px rgba(27, 27, 24, 0.12);
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    margin: 0 auto;
-    max-width: 720px;
-    padding: 24px 16px 48px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 16px;
     line-height: 1.55;
     color: var(--ink);
-    background: #fff;
+    background: var(--paper);
   }
   ::selection { background: #cde9d4; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 6px; font-weight: 700; }
-  h2 { font-size: 1.15rem; margin: 0 0 14px; font-weight: 650; }
-  p { margin: 0 0 12px; }
-  .lede { color: var(--muted); margin-bottom: 0; }
-  header { padding-bottom: 20px; }
-  section { padding: 22px 0; border-top: 1px solid var(--line); }
+  :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 4px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 64px; }
+  @media (min-width: 640px) { .wrap { padding: 0 24px 80px; } }
+
+  /* ---- Topbar ---- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 16px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  @media (min-width: 640px) { .topbar-inner { padding: 0 24px; } }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    background: var(--green);
+    color: #fff;
+    border-radius: 8px;
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .brand-name { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    padding: 5px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .status-pill .dot {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .status-pill.is-down { color: var(--danger); }
+  .status-pill.is-down .dot { background: var(--danger); animation: none; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ---- Hero ---- */
+  .hero { padding: 36px 0 26px; }
+  @media (min-width: 640px) { .hero { padding: 48px 0 32px; } }
+  .hero h1 {
+    margin: 0 0 12px;
+    font-size: clamp(1.9rem, 6vw, 2.6rem);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+    text-wrap: balance;
+  }
+  .hero h1 .accent { color: var(--green); }
+  .hero p { margin: 0; color: var(--muted); font-size: 1.05rem; max-width: 58ch; }
+
+  /* ---- Cards ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+  .card + .card { margin-top: 20px; }
+
+  /* ---- API key strip ---- */
+  .key-card { padding: 20px; }
+  @media (min-width: 640px) { .key-card { padding: 22px 24px; } }
+  .key-head { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between; }
+  .key-head h2 { margin: 0 0 4px; font-size: 1rem; font-weight: 700; }
+  .key-head p { margin: 0; color: var(--muted); font-size: 0.92rem; max-width: 46ch; }
+  .key-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .key-saved { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.95rem; }
+  .key-saved .ok-icon {
+    width: 28px; height: 28px; flex: none;
+    display: grid; place-items: center;
+    background: var(--green-soft); color: var(--green-deep);
+    border-radius: 50%;
+  }
+  .key-saved .ok-icon svg { width: 16px; height: 16px; }
+  details.paste { margin-top: 16px; }
+  details.paste > summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--green);
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  details.paste > summary::-webkit-details-marker { display: none; }
+  details.paste > summary .chev { transition: transform 200ms ease; }
+  details.paste[open] > summary .chev { transform: rotate(180deg); }
+  .paste-form { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: flex-end; }
+  .paste-form .field { flex: 1 1 260px; margin-bottom: 0; }
+  .key-new-block { margin-top: 16px; padding: 14px; background: var(--green-soft); border-radius: var(--radius-sm); }
+  .key-new-block p { margin: 0 0 10px; font-size: 0.9rem; }
+  .key-new-block .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .key-new-block input { flex: 1 1 260px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.85rem; }
   .hint { font-size: 0.85rem; color: var(--muted); }
-  .field { margin-bottom: 14px; }
+  .key-status { margin: 12px 0 0; }
+
+  /* ---- Tabs ---- */
+  .tool-card { overflow: hidden; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    background: var(--chip-bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    flex: 1;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  }
+  .tab svg { width: 18px; height: 18px; flex: none; }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--green-deep);
+    border-color: var(--line);
+    box-shadow: var(--shadow-tab);
+  }
+  .panel { padding: 20px; }
+  @media (min-width: 640px) { .panel { padding: 24px; } }
+
+  /* ---- Forms ---- */
+  .field { margin-bottom: 16px; }
   label, legend {
     display: block;
     font-size: 0.85rem;
     font-weight: 600;
     margin-bottom: 6px;
   }
-  fieldset { border: 0; padding: 0; margin: 0 0 14px; }
+  fieldset { border: 0; padding: 0; margin: 0 0 16px; }
   input[type="text"], input[type="password"], input[type="number"], select {
     width: 100%;
-    min-height: 44px;
-    padding: 10px 12px;
+    min-height: 48px;
+    padding: 11px 12px;
     font: inherit;
     font-size: 16px;
     color: var(--ink);
     background: #fff;
     border: 1px solid var(--field-border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
+    transition: border-color 180ms ease, box-shadow 180ms ease;
   }
-  input:disabled, select:disabled { background: #f4f4f2; color: #8a8a8a; }
-  input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+  input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.15); outline: none; }
+  input:disabled, select:disabled { background: #f4f4f2; color: #8a8a85; }
+  input[type="checkbox"].plain { width: 20px; height: 20px; accent-color: var(--green); flex: none; }
   .check {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
-    min-height: 40px;
+    min-height: 44px;
     font-weight: 400;
-    font-size: 1rem;
-    margin-bottom: 2px;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
     cursor: pointer;
   }
-  .checks { display: flex; flex-wrap: wrap; gap: 4px 20px; }
-  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  button {
+  .check input[type="checkbox"].plain { margin-top: 2px; }
+  .grid-2 { display: grid; gap: 0 24px; }
+  @media (min-width: 640px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+  .place-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .place-head svg { width: 16px; height: 16px; color: var(--green); flex: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .chip span {
+    display: inline-flex;
+    align-items: center;
     min-height: 44px;
-    padding: 0 20px;
+    padding: 0 16px;
+    border: 1px solid var(--field-border);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+    user-select: none;
+  }
+  .chip input:checked + span { background: var(--green-soft); border-color: var(--green); color: var(--green-deep); }
+  .chip input:focus-visible + span { outline: 2px solid var(--green); outline-offset: 2px; }
+  .submit-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 20px; }
+
+  /* ---- Buttons ---- */
+  button {
     font: inherit;
+    cursor: pointer;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 22px;
     font-size: 1rem;
     font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background 180ms ease, border-color 180ms ease, opacity 180ms ease;
   }
-  button:disabled { opacity: 0.55; cursor: default; }
-  .btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .btn:disabled { opacity: 0.6; cursor: default; }
+  .btn-primary { background: var(--green); color: #fff; border: 1px solid var(--green); }
+  .btn-primary:hover:not(:disabled) { background: var(--green-deep); border-color: var(--green-deep); }
   .btn-secondary { background: #fff; color: var(--ink); border: 1px solid var(--field-border); }
-  .grid-2 { display: grid; gap: 0 20px; }
-  @media (min-width: 640px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
-  dl.stats { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; font-size: 0.95rem; }
+  .btn-secondary:hover:not(:disabled) { border-color: var(--ink); }
+  .btn-sm { min-height: 40px; padding: 0 16px; font-size: 0.92rem; }
+  .btn-block { width: 100%; }
+  @media (min-width: 640px) { .btn-block { width: auto; } }
+  .btn.loading::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    flex: none;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .btn-secondary.loading::before { border-color: rgba(27, 27, 24, 0.25); border-top-color: var(--ink); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Results ---- */
+  .result-area { margin-top: 24px; }
+  .result-area:empty { margin-top: 0; }
+  .result { animation: rise 250ms ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .empty-state {
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-sm);
+    padding: 22px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .empty-state svg { width: 28px; height: 28px; margin-bottom: 8px; color: #b9b7ae; }
+  .result-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; margin-bottom: 4px; }
+  .result-head strong { font-size: 1.08rem; letter-spacing: -0.01em; }
+  .result-head .arrow { color: var(--green); font-weight: 700; }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--field-border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .tag-ok { color: var(--green-deep); border-color: var(--green); background: var(--green-soft); }
+  .tag-warn { color: var(--amber); border-color: #d9b48a; background: var(--amber-soft); }
+  .tag-bad { color: var(--danger); border-color: #e5a3a3; background: var(--danger-soft); }
+  .price-list { margin: 16px 0 0; border-top: 1px solid var(--line); }
+  .price-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+  }
+  .price-row .courier { font-weight: 700; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .price-row .service { color: var(--muted); font-size: 0.88rem; }
+  .price-row .price {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.12rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .price-row .meta { color: var(--muted); font-size: 0.85rem; text-align: right; }
+  .price-row .meta .src-live { color: var(--amber); font-weight: 600; }
+  .price-row .meta .src-db { color: var(--green-deep); font-weight: 600; }
+  .failed-list { margin: 16px 0 0; padding: 0; list-style: none; font-size: 0.9rem; color: var(--muted); }
+  .failed-list li { padding: 6px 0; border-top: 1px dashed var(--line); }
+  .failed-list li:first-child { border-top: 0; }
+  .failed-list strong { color: var(--ink); }
+
+  dl.stats { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 0.95rem; }
   dl.stats dt { color: var(--muted); }
   dl.stats dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
-  .table-wrap { overflow-x: auto; margin: 12px 0; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; white-space: nowrap; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
-  th { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  @media (min-width: 640px) { dl.stats.wide { grid-template-columns: repeat(2, auto 1fr); column-gap: 32px; } }
+
+  .status-head { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: 4px; }
+  .status-head strong { font-size: 1.25rem; letter-spacing: -0.01em; }
+  .track-details { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  ol.timeline { list-style: none; margin: 20px 0 0; padding: 0 0 0 20px; border-left: 2px solid var(--line); }
+  ol.timeline li { margin-bottom: 16px; position: relative; }
+  ol.timeline li:last-child { margin-bottom: 0; }
+  ol.timeline li::before {
+    content: "";
+    position: absolute;
+    left: -26px;
+    top: 7px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--green);
+  }
+  ol.timeline li:last-child::before { background: var(--green); }
+  ol.timeline .t-time { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ol.timeline .t-loc { font-weight: 700; }
+  ol.timeline .t-desc { color: var(--muted); font-size: 0.92rem; }
+
   .error-box {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
     border: 1px solid #e5a3a3;
     background: var(--danger-soft);
     color: #7f1d1d;
     padding: 12px 14px;
-    border-radius: 6px;
-    margin: 12px 0;
+    border-radius: var(--radius-sm);
     font-size: 0.95rem;
   }
-  .tag {
-    display: inline-block;
-    font-size: 0.82rem;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--field-border);
-    color: var(--muted);
+  .error-box svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+
+  details.raw { margin-top: 18px; }
+  details.raw > summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--green);
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
-  .tag-ok { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
-  .tag-warn { color: var(--amber); border-color: #d9b48a; background: var(--amber-soft); }
-  .tag-bad { color: var(--danger); border-color: #e5a3a3; background: var(--danger-soft); }
-  .result-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; margin: 12px 0 4px; }
-  .result-head strong { font-size: 1.05rem; }
-  ol.timeline { list-style: none; margin: 14px 0 0; padding: 0 0 0 18px; border-left: 1px solid #d4d4d4; }
-  ol.timeline li { margin-bottom: 14px; position: relative; }
-  ol.timeline li::before {
-    content: "";
-    position: absolute;
-    left: -23px;
-    top: 8px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid var(--accent);
-  }
-  ol.timeline .t-time { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-  ol.timeline .t-loc { font-weight: 600; }
-  details { margin-top: 14px; }
-  summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; color: var(--accent); }
+  details.raw > summary::-webkit-details-marker { display: none; }
+  details.raw > summary .chev { transition: transform 200ms ease; }
+  details.raw[open] > summary .chev { transform: rotate(180deg); }
   pre {
     overflow-x: auto;
     background: var(--pre-bg);
-    padding: 12px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    line-height: 1.5;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    line-height: 1.55;
   }
-  .empty { color: var(--muted); font-size: 0.95rem; }
-  footer { border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 0.85rem; }
+  code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; }
+
+  /* ---- Status section ---- */
+  .status-card { padding: 20px; }
+  @media (min-width: 640px) { .status-card { padding: 22px 24px; } }
+  .status-card > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .status-card > summary::-webkit-details-marker { display: none; }
+  .status-card > summary .chev { transition: transform 200ms ease; color: var(--muted); flex: none; }
+  .status-card[open] > summary .chev { transform: rotate(180deg); }
+  .status-body { margin-top: 16px; }
+  .status-body .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+
+  footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+  footer p { margin: 0 0 8px; }
+  footer p:last-child { margin-bottom: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Konsol Tes OpenOngkir</h1>
-  <p class="lede">Tes API cek ongkir dan cek resi langsung dari browser, tanpa curl.</p>
-</header>
-
-<section id="kunci">
-  <h2>API key</h2>
-  <form id="key-form" class="row">
-    <div class="field" style="flex: 1 1 260px; margin-bottom: 0;">
-      <label for="api-key">Kunci API</label>
-      <input type="password" id="api-key" name="api-key" autocomplete="off" placeholder="Tempel kunci API di sini">
-    </div>
-    <button type="submit" class="btn-primary">Simpan</button>
-    <button type="button" id="key-forget" class="btn-secondary">Lupakan</button>
-  </form>
-  <p class="hint" style="margin-top: 10px;">Kunci disimpan di browser ini saja (localStorage) dan hanya dikirim ke API OpenOngkir. Belum punya kunci? Buat satu di bawah — atau pakai kunci master dari file <code>.env</code> di server (<code>~/OpenOngkir/.env</code>, variabel <code>OPENONGKIR_API_KEY</code>).</p>
-  <div class="row" style="margin-top: 12px;">
-    <button type="button" id="key-create" class="btn-secondary">Buat API key</button>
-    <span class="hint">Maksimal 3 kunci baru per 24 jam.</span>
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/test" aria-label="OpenOngkir">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M7.5 4.27 16.5 9.42"/></svg></span>
+      <span class="brand-name">OpenOngkir</span>
+    </a>
+    <span class="status-pill" id="status-pill"><span class="dot" aria-hidden="true"></span><span id="status-pill-text">Memuat status…</span></span>
   </div>
-  <div id="key-created" hidden>
-    <p class="hint" style="margin-top: 12px;"><strong>Kunci baru — simpan sekarang, hanya ditampilkan sekali.</strong> Kunci ini sudah otomatis tersimpan di browser ini.</p>
-    <div class="row">
-      <input type="text" id="key-new" readonly style="flex: 1 1 260px;" aria-label="API key baru">
-      <button type="button" id="key-copy" class="btn-secondary">Salin</button>
-    </div>
-  </div>
-  <div id="key-create-error"></div>
-  <p id="key-status" class="hint" aria-live="polite"></p>
-</section>
+</div>
 
-<section id="health">
-  <h2>Status layanan</h2>
-  <div class="row" style="margin-bottom: 12px;">
-    <button type="button" id="health-refresh" class="btn-secondary">Muat ulang</button>
-    <span class="hint">Tidak butuh API key.</span>
-  </div>
-  <div id="health-result"><p class="empty">Memuat…</p></div>
-</section>
+<div class="wrap">
+  <header class="hero">
+    <h1>Cek ongkir &amp; lacak resi, <span class="accent">tanpa perantara.</span></h1>
+    <p>OpenOngkir menyimpan database tarif sendiri yang dipanen langsung dari kurir resmi — jadi harga bisa dicek tanpa layanan agregator pihak ketiga. Semua harga adalah estimasi.</p>
+  </header>
 
-<section id="ongkir">
-  <h2>Cek ongkir</h2>
-  <form id="cost-form">
-    <div class="grid-2">
-      <div>
-        <div class="field">
-          <label for="origin-prov">Asal — Provinsi</label>
-          <select id="origin-prov" name="origin-prov"></select>
+  <section class="card key-card" id="kunci" aria-label="API key">
+    <div id="key-none">
+      <div class="key-head">
+        <div>
+          <h2>API key</h2>
+          <p>Cek ongkir dan lacak resi butuh API key. Buat satu gratis — maksimal 3 kunci baru per 24 jam.</p>
         </div>
-        <div class="field">
-          <label for="origin-kab">Asal — Kab/Kota</label>
-          <select id="origin-kab" name="origin-kab" disabled></select>
-        </div>
-        <div class="field">
-          <label for="origin-kec">Asal — Kecamatan</label>
-          <select id="origin-kec" name="origin-kec" disabled></select>
+        <div class="key-actions">
+          <button type="button" id="key-create" class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><span>Buat API key gratis</span></button>
         </div>
       </div>
-      <div>
-        <div class="field">
-          <label for="dest-prov">Tujuan — Provinsi</label>
-          <select id="dest-prov" name="dest-prov"></select>
+      <details class="paste" id="key-paste-wrap">
+        <summary>Punya key? Tempel di sini <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <form id="key-form" class="paste-form">
+          <div class="field">
+            <label for="api-key">Kunci API</label>
+            <input type="password" id="api-key" name="api-key" autocomplete="off" placeholder="Tempel kunci API di sini">
+          </div>
+          <button type="submit" class="btn btn-secondary">Simpan</button>
+        </form>
+      </details>
+      <p class="hint key-status" id="key-status" aria-live="polite"></p>
+    </div>
+    <div id="key-saved" hidden>
+      <div class="key-head">
+        <div class="key-saved">
+          <span class="ok-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span>API key tersimpan di browser ini.</span>
         </div>
-        <div class="field">
-          <label for="dest-kab">Tujuan — Kab/Kota</label>
-          <select id="dest-kab" name="dest-kab" disabled></select>
+        <div class="key-actions">
+          <button type="button" id="key-change" class="btn btn-secondary btn-sm">Ganti key</button>
+          <button type="button" id="key-forget" class="btn btn-secondary btn-sm">Lupakan</button>
         </div>
-        <div class="field">
-          <label for="dest-kec">Tujuan — Kecamatan</label>
-          <select id="dest-kec" name="dest-kec" disabled></select>
+      </div>
+      <p class="hint key-status">Kunci hanya disimpan di browser ini dan hanya dikirim ke API OpenOngkir.</p>
+    </div>
+    <div id="key-created" hidden>
+      <div class="key-new-block">
+        <p><strong>Kunci baru — simpan sekarang, hanya ditampilkan sekali.</strong> Kunci ini sudah otomatis tersimpan di browser ini.</p>
+        <div class="row">
+          <input type="text" id="key-new" readonly aria-label="API key baru">
+          <button type="button" id="key-copy" class="btn btn-secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Salin</span></button>
         </div>
       </div>
     </div>
-    <div class="field">
-      <label for="weight">Berat (gram)</label>
-      <input type="number" id="weight" name="weight" value="1000" min="100" max="30000" step="1" inputmode="numeric">
-    </div>
-    <fieldset>
-      <legend>Kurir</legend>
-      <div class="checks" id="courier-checks"></div>
-    </fieldset>
-    <label class="check"><input type="checkbox" id="cost-fresh"> Panen ulang dari kurir (fresh=1, abaikan DB)</label>
-    <button type="submit" class="btn-primary">Cek ongkir</button>
-  </form>
-  <div id="cost-result"><p class="empty">Belum ada hasil — isi form lalu tekan Cek ongkir.</p></div>
-  <details id="cost-raw-wrap" hidden>
-    <summary>Respons JSON</summary>
-    <pre id="cost-raw"></pre>
-  </details>
-</section>
+    <div id="key-create-error"></div>
+  </section>
 
-<section id="resi">
-  <h2>Cek resi</h2>
-  <form id="track-form">
-    <div class="field">
-      <label for="track-courier">Kurir</label>
-      <select id="track-courier" name="track-courier"></select>
+  <section class="card tool-card" aria-label="Alat cek ongkir dan lacak resi">
+    <div class="tabs" role="tablist" aria-label="Pilih alat">
+      <button type="button" class="tab" id="tab-cost" role="tab" aria-selected="true" aria-controls="panel-cost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>Cek ongkir</button>
+      <button type="button" class="tab" id="tab-track" role="tab" aria-selected="false" aria-controls="panel-track" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lacak resi</span></button>
     </div>
-    <div class="field">
-      <label for="awb">Nomor resi</label>
-      <input type="text" id="awb" name="awb" autocomplete="off" placeholder="Nomor resi" autocapitalize="characters">
-    </div>
-    <div class="field">
-      <label for="phone">Digit terakhir HP penerima</label>
-      <input type="text" id="phone" name="phone" autocomplete="off" inputmode="numeric" placeholder="JNE: 5 digit, J&amp;T: 4 digit">
-      <p class="hint">JNE butuh 5 digit terakhir, J&amp;T 4 digit terakhir nomor HP penerima. Kurir lain tidak butuh digit ini.</p>
-    </div>
-    <label class="check"><input type="checkbox" id="track-fresh"> Tanya ulang ke kurir (fresh=1, abaikan cache)</label>
-    <button type="submit" class="btn-primary">Lacak resi</button>
-  </form>
-  <div id="track-result"><p class="empty">Belum ada hasil — isi form lalu tekan Lacak resi.</p></div>
-  <details id="track-raw-wrap" hidden>
-    <summary>Respons JSON</summary>
-    <pre id="track-raw"></pre>
-  </details>
-</section>
 
-<footer>
-  <p>OpenOngkir v1 — konsol tes ini memanggil endpoint <code>/v1/health</code>, <code>/v1/wilayah</code>, <code>/v1/cost</code>, dan <code>/v1/track</code> di server yang sama. Dokumentasi lengkap: <code>docs/API.md</code>.</p>
-</footer>
+    <div class="panel" id="panel-cost" role="tabpanel" aria-labelledby="tab-cost">
+      <form id="cost-form">
+        <div class="grid-2">
+          <div>
+            <p class="place-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Asal</p>
+            <div class="field">
+              <label for="origin-prov">Provinsi</label>
+              <select id="origin-prov" name="origin-prov"></select>
+            </div>
+            <div class="field">
+              <label for="origin-kab">Kab/Kota</label>
+              <select id="origin-kab" name="origin-kab" disabled></select>
+            </div>
+            <div class="field">
+              <label for="origin-kec">Kecamatan</label>
+              <select id="origin-kec" name="origin-kec" disabled></select>
+            </div>
+          </div>
+          <div>
+            <p class="place-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Tujuan</p>
+            <div class="field">
+              <label for="dest-prov">Provinsi</label>
+              <select id="dest-prov" name="dest-prov"></select>
+            </div>
+            <div class="field">
+              <label for="dest-kab">Kab/Kota</label>
+              <select id="dest-kab" name="dest-kab" disabled></select>
+            </div>
+            <div class="field">
+              <label for="dest-kec">Kecamatan</label>
+              <select id="dest-kec" name="dest-kec" disabled></select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="weight">Berat (gram)</label>
+          <input type="number" id="weight" name="weight" value="1000" min="100" max="30000" step="1" inputmode="numeric">
+        </div>
+        <fieldset>
+          <legend>Kurir</legend>
+          <div class="chips" id="courier-checks"></div>
+        </fieldset>
+        <label class="check"><input type="checkbox" class="plain" id="cost-fresh"> Panen ulang dari kurir (fresh=1, abaikan DB)</label>
+        <div class="submit-row">
+          <button type="submit" class="btn btn-primary btn-block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Cek ongkir</span></button>
+        </div>
+      </form>
+      <div class="result-area" id="cost-result">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          <div>Belum ada hasil — isi asal, tujuan, dan berat, lalu tekan Cek ongkir.</div>
+        </div>
+      </div>
+      <details class="raw" id="cost-raw-wrap" hidden>
+        <summary>Respons JSON <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <pre id="cost-raw"></pre>
+      </details>
+    </div>
+
+    <div class="panel" id="panel-track" role="tabpanel" aria-labelledby="tab-track" hidden>
+      <form id="track-form">
+        <div class="field">
+          <label for="track-courier">Kurir</label>
+          <select id="track-courier" name="track-courier"></select>
+        </div>
+        <div class="field">
+          <label for="awb">Nomor resi</label>
+          <input type="text" id="awb" name="awb" autocomplete="off" placeholder="Nomor resi" autocapitalize="characters">
+        </div>
+        <div class="field">
+          <label for="phone">Digit terakhir HP penerima</label>
+          <input type="text" id="phone" name="phone" autocomplete="off" inputmode="numeric" placeholder="JNE: 5 digit, J&amp;T: 4 digit">
+          <p class="hint">JNE butuh 5 digit terakhir, J&amp;T 4 digit terakhir nomor HP penerima. Kurir lain tidak butuh digit ini.</p>
+        </div>
+        <label class="check"><input type="checkbox" class="plain" id="track-fresh"> Tanya ulang ke kurir (fresh=1, abaikan cache)</label>
+        <div class="submit-row">
+          <button type="submit" class="btn btn-primary btn-block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lacak resi</span></button>
+        </div>
+      </form>
+      <div class="result-area" id="track-result">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div>Belum ada hasil — isi kurir dan nomor resi, lalu tekan Lacak resi.</div>
+        </div>
+      </div>
+      <details class="raw" id="track-raw-wrap" hidden>
+        <summary>Respons JSON <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <pre id="track-raw"></pre>
+      </details>
+    </div>
+  </section>
+
+  <details class="card status-card" id="health">
+    <summary>Status layanan <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <div class="status-body">
+      <div class="row">
+        <button type="button" id="health-refresh" class="btn btn-secondary btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Muat ulang</button>
+        <span class="hint">Tidak butuh API key.</span>
+      </div>
+      <div id="health-result"><p class="hint">Memuat…</p></div>
+    </div>
+  </details>
+
+  <footer>
+    <p>OpenOngkir v1 — halaman ini memanggil endpoint <code>/v1/health</code>, <code>/v1/wilayah</code>, <code>/v1/cost</code>, dan <code>/v1/track</code> di server yang sama. Dokumentasi lengkap: <code>docs/API.md</code>.</p>
+    <p>Harga ongkir adalah estimasi dari database tarif yang dipanen dari endpoint resmi kurir.</p>
+  </footer>
+</div>
 
 <script>
 'use strict';
@@ -286,6 +660,7 @@ const STATUS_ID = {
 };
 const $ = (id) => document.getElementById(id);
 const rp = new Intl.NumberFormat('id-ID');
+const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -325,41 +700,80 @@ async function api(path, withKey) {
 
 function errorBox(err, hint) {
   const status = err.status ? 'HTTP ' + err.status + ' — ' : '';
-  return '<div class="error-box" role="alert"><strong>' + esc(status) + '</strong>' + esc(err.message) +
-    (hint ? '<br>' + esc(hint) : '') + '</div>';
+  return '<div class="error-box result" role="alert">' + ICON_ALERT + '<div><strong>' + esc(status) + '</strong>' + esc(err.message) +
+    (hint ? '<br>' + esc(hint) : '') + '</div></div>';
 }
 function showRaw(wrapId, preId, body) {
   $(wrapId).hidden = false;
   $(preId).textContent = JSON.stringify(body, null, 2);
 }
+function setLoading(btn, on, label) {
+  btn.disabled = on;
+  btn.classList.toggle('loading', on);
+  if (label) {
+    const span = btn.querySelector('span');
+    if (span) span.textContent = label; else btn.textContent = label;
+  }
+}
+
+// ---- Tab Cek ongkir / Lacak resi ----
+const TABS = [$('tab-cost'), $('tab-track')];
+function selectTab(tab) {
+  for (const t of TABS) {
+    const selected = t === tab;
+    t.setAttribute('aria-selected', String(selected));
+    t.tabIndex = selected ? 0 : -1;
+    $(t.getAttribute('aria-controls')).hidden = !selected;
+  }
+}
+for (const t of TABS) {
+  t.addEventListener('click', () => selectTab(t));
+  t.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const next = t === TABS[0] ? TABS[1] : TABS[0];
+    selectTab(next);
+    next.focus();
+  });
+}
 
 // ---- API key ----
 function refreshKeyStatus() {
   const saved = Boolean(getKey());
-  $('key-status').textContent = saved
-    ? 'API key tersimpan di browser ini.'
-    : 'Belum ada API key tersimpan — cek ongkir dan cek resi butuh API key.';
-  $('api-key').value = saved ? getKey() : '';
+  $('key-none').hidden = saved;
+  $('key-saved').hidden = !saved;
+  if (!saved) {
+    $('key-status').textContent = 'Belum ada API key tersimpan.';
+    $('api-key').value = '';
+  }
 }
 $('key-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const v = $('api-key').value.trim();
   if (!v) { $('key-status').textContent = 'Isi dulu API key-nya.'; return; }
   localStorage.setItem(KEY_NAME, v);
+  $('key-paste-wrap').open = false;
   refreshKeyStatus();
   loadProvinces();
 });
 $('key-forget').addEventListener('click', () => {
   localStorage.removeItem(KEY_NAME);
+  $('key-created').hidden = true;
   refreshKeyStatus();
   disableCascades('Isi API key dulu');
+});
+$('key-change').addEventListener('click', () => {
+  $('key-none').hidden = false;
+  $('key-saved').hidden = true;
+  $('key-paste-wrap').open = true;
+  $('api-key').value = getKey();
+  $('api-key').focus();
 });
 
 // ---- Buat API key baru (tanpa auth, dibatasi 3/IP/24 jam) ----
 $('key-create').addEventListener('click', async () => {
   const btn = $('key-create');
-  btn.disabled = true;
-  btn.textContent = 'Membuat…';
+  setLoading(btn, true, 'Membuat…');
   $('key-create-error').innerHTML = '';
   $('key-created').hidden = true;
   try {
@@ -378,30 +792,32 @@ $('key-create').addEventListener('click', async () => {
   } catch (err) {
     $('key-create-error').innerHTML = errorBox(err);
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Buat API key';
+    setLoading(btn, false, 'Buat API key gratis');
   }
 });
 $('key-copy').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
+  const label = btn.querySelector('span');
   try {
     await navigator.clipboard.writeText($('key-new').value);
   } catch {
     $('key-new').select();
     document.execCommand('copy');
   }
-  btn.textContent = 'Tersalin';
-  setTimeout(() => { btn.textContent = 'Salin'; }, 2000);
+  if (label) label.textContent = 'Tersalin'; else btn.textContent = 'Tersalin';
+  setTimeout(() => { if (label) label.textContent = 'Salin'; else btn.textContent = 'Salin'; }, 2000);
 });
 
 // ---- Health (tanpa key) ----
 async function loadHealth() {
-  $('health-result').innerHTML = '<p class="empty">Memuat…</p>';
+  $('health-result').innerHTML = '<p class="hint">Memuat…</p>';
   try {
     const b = await api('/v1/health', false);
     const pct = b.quotes_db_pct == null ? 'belum ada quote' : b.quotes_db_pct + '%';
+    $('status-pill').classList.remove('is-down');
+    $('status-pill-text').textContent = 'Live · v' + b.version;
     $('health-result').innerHTML =
-      '<dl class="stats">' +
+      '<dl class="stats wide">' +
       '<dt>Versi</dt><dd>' + esc(b.version) + '</dd>' +
       '<dt>Status</dt><dd>' + esc(b.status) + '</dd>' +
       '<dt>Tarif tersimpan</dt><dd>' + rp.format(b.tariffs) + '</dd>' +
@@ -414,6 +830,8 @@ async function loadHealth() {
       '<dt>Panen terakhir</dt><dd>' + esc(b.last_harvest ? fmtTime(b.last_harvest) : 'belum pernah') + '</dd>' +
       '</dl>';
   } catch (err) {
+    $('status-pill').classList.add('is-down');
+    $('status-pill-text').textContent = 'Tidak terjangkau';
     $('health-result').innerHTML = errorBox(err);
   }
 }
@@ -474,7 +892,7 @@ async function loadProvinces() {
 
 // ---- Cek ongkir ----
 $('courier-checks').innerHTML = COURIERS.map(([code, name]) =>
-  '<label class="check"><input type="checkbox" name="courier" value="' + code + '" checked> ' + esc(name) + '</label>'
+  '<label class="chip"><input type="checkbox" name="courier" value="' + code + '" checked><span>' + esc(name) + '</span></label>'
 ).join('');
 
 $('cost-form').addEventListener('submit', async (e) => {
@@ -499,35 +917,37 @@ $('cost-form').addEventListener('submit', async (e) => {
   const q = new URLSearchParams({ origin, destination: dest, weight_g: String(weight) });
   if (couriers.length < COURIERS.length) q.set('courier', couriers.join(','));
   if ($('cost-fresh').checked) q.set('fresh', '1');
-  btn.disabled = true;
-  btn.textContent = 'Memuat…';
-  $('cost-result').innerHTML = '<p class="empty">Memuat…</p>';
+  setLoading(btn, true, 'Memuat…');
+  $('cost-result').innerHTML = '<div class="empty-state">Memuat harga dari kurir…</div>';
   try {
     const b = await api('/v1/cost?' + q.toString(), true);
     showRaw('cost-raw-wrap', 'cost-raw', b);
-    const rows = b.options.map((o) =>
-      '<tr><td>' + esc(o.courierName) + '</td><td>' + esc(o.service) + '</td>' +
-      '<td class="num">' + esc(fmtRp(o.price)) + '</td><td>' + esc(o.eta || '—') + '</td>' +
-      '<td>' + esc(fmtTime(o.fetched_at)) + '</td><td>' + (o.cached ? 'DB' : 'Live') + '</td></tr>'
+    const sorted = [...b.options].sort((a, b2) => a.price - b2.price);
+    const rows = sorted.map((o, i) =>
+      '<div class="price-row"><div><div class="courier">' + esc(o.courierName) +
+      (i === 0 ? ' <span class="tag tag-ok">Termurah</span>' : '') + '</div>' +
+      '<div class="service">' + esc(o.service) + '</div></div>' +
+      '<div><div class="price">' + esc(fmtRp(o.price)) + '</div>' +
+      '<div class="meta">' + esc(o.eta || '—') + ' · <span class="' + (o.cached ? 'src-db' : 'src-live') + '">' + (o.cached ? 'DB' : 'Live') + '</span></div></div></div>'
     ).join('');
     const errs = (b.errors || []).map((er) =>
       '<li><strong>' + esc(er.courierName) + ':</strong> ' + esc(er.error) + '</li>'
     ).join('');
     $('cost-result').innerHTML =
-      '<div class="result-head"><strong>' + esc(b.origin.name) + ' → ' + esc(b.destination.name) +
-      '</strong><span class="hint">' + esc(b.weight_kg) + ' kg · Estimasi</span></div>' +
+      '<div class="result">' +
+      '<div class="result-head"><strong>' + esc(b.origin.name) + ' <span class="arrow">→</span> ' + esc(b.destination.name) +
+      '</strong><span class="tag">Estimasi</span><span class="hint">' + esc(b.weight_kg) + ' kg</span></div>' +
       '<p class="hint">' + esc(b.disclaimer) + '</p>' +
-      '<div class="table-wrap"><table><thead><tr><th>Kurir</th><th>Layanan</th><th class="num">Harga</th>' +
-      '<th>Estimasi</th><th>Diambil</th><th>Sumber</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      (errs ? '<p><strong>Kurir yang gagal:</strong></p><ul>' + errs + '</ul>' : '');
+      '<div class="price-list">' + rows + '</div>' +
+      (errs ? '<ul class="failed-list"><li><strong>Kurir yang gagal:</strong></li>' + errs + '</ul>' : '') +
+      '</div>';
     loadHealth();
   } catch (err) {
     if (err.body) showRaw('cost-raw-wrap', 'cost-raw', err.body);
     $('cost-result').innerHTML = errorBox(err,
       err.status === 401 ? 'Periksa API key.' : null);
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Cek ongkir';
+    setLoading(btn, false, 'Cek ongkir');
   }
 });
 
@@ -549,9 +969,8 @@ $('track-form').addEventListener('submit', async (e) => {
   const q = new URLSearchParams({ courier, awb });
   if (phone) q.set('phone', phone);
   if ($('track-fresh').checked) q.set('fresh', '1');
-  btn.disabled = true;
-  btn.textContent = 'Memuat…';
-  $('track-result').innerHTML = '<p class="empty">Memuat…</p>';
+  setLoading(btn, true, 'Memuat…');
+  $('track-result').innerHTML = '<div class="empty-state">Melacak resi…</div>';
   try {
     const b = await api('/v1/track?' + q.toString(), true);
     showRaw('track-raw-wrap', 'track-raw', b);
@@ -561,28 +980,29 @@ $('track-form').addEventListener('submit', async (e) => {
     const events = (b.events || []).map((ev) =>
       '<li><div class="t-time">' + esc(fmtTime(ev.time)) + '</div>' +
       '<div class="t-loc">' + esc(ev.location || '—') + '</div>' +
-      '<div>' + esc(ev.description || '') + '</div></li>'
+      '<div class="t-desc">' + esc(ev.description || '') + '</div></li>'
     ).join('');
     $('track-result').innerHTML =
-      '<div class="result-head"><span class="tag ' + tagClass + '">' + esc(b.status) + '</span>' +
-      '<strong>' + esc(STATUS_ID[b.status] || b.status) + '</strong>' +
-      '<span class="hint">' + esc(b.courierName) + ' · ' + esc(b.awb) + '</span></div>' +
-      '<dl class="stats" style="margin-top: 12px;">' +
+      '<div class="result">' +
+      '<div class="status-head"><span class="tag ' + tagClass + '">' + esc(b.status) + '</span>' +
+      '<strong>' + esc(STATUS_ID[b.status] || b.status) + '</strong></div>' +
+      '<p class="hint">' + esc(b.courierName) + ' · <code>' + esc(b.awb) + '</code></p>' +
+      '<div class="track-details"><dl class="stats wide">' +
       detail('Layanan', b.service) + detail('Pengirim', b.sender) +
       detail('Penerima', b.recipient) + detail('Asal', b.origin) +
       detail('Tujuan', b.destination) + detail('Diambil', fmtTime(b.fetched_at)) +
-      detail('Sumber', b.cached ? 'Cache (30 menit)' : 'Live') + '</dl>' +
+      detail('Sumber', b.cached ? 'Cache (30 menit)' : 'Live') + '</dl></div>' +
       (events
         ? '<ol class="timeline">' + events + '</ol>'
-        : '<p class="empty" style="margin-top: 12px;">Belum ada riwayat perjalanan.</p>');
+        : '<p class="hint" style="margin-top: 16px;">Belum ada riwayat perjalanan.</p>') +
+      '</div>';
   } catch (err) {
     if (err.body) showRaw('track-raw-wrap', 'track-raw', err.body);
     $('track-result').innerHTML = errorBox(err,
       err.status === 401 ? 'Periksa API key.'
         : (err.status === 404 ? 'Pastikan nomor resi benar dan digit HP cocok.' : null));
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Lacak resi';
+    setLoading(btn, false, 'Lacak resi');
   }
 });
 
