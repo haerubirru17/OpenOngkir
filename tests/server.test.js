@@ -55,6 +55,16 @@ describe('server', () => {
     assert.equal(body.wilayah, 7837);
   });
 
+  it('/test: halaman konsol tanpa auth', async () => {
+    const res = await fetch(`${ctx.base}/test`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /text\/html/);
+    const body = await res.text();
+    assert.match(body, /Konsol Tes OpenOngkir/);
+    assert.match(body, /id="cost-form"/);
+    assert.match(body, /id="track-form"/);
+  });
+
   it('tanpa API key = 401', async () => {
     const res = await fetch(`${ctx.base}/v1/wilayah`);
     assert.equal(res.status, 401);

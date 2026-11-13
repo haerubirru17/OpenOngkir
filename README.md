@@ -7,7 +7,9 @@ Berdiri sendiri sebagai layanan + database sendiri. Repo Berbirru tidak
 disentuh — Berbirru (atau siapa pun) tinggal memanggil API OpenOngkir.
 
 Layanan live: <https://ongkir.lightvela.my.id> — dokumentasi API untuk
-konsumen: [`docs/API.md`](docs/API.md).
+konsumen: [`docs/API.md`](docs/API.md). Konsol tes di browser:
+[`/test`](https://ongkir.lightvela.my.id/test) — cek ongkir dan cek resi
+tanpa curl (butuh API key dari `.env` di server).
 
 ## Cara kerja
 

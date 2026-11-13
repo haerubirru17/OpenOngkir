@@ -4,6 +4,7 @@
 //   GET /v1/cost?origin=&destination=&weight_g=&courier=&fresh=1
 //   GET /v1/track?courier=&awb=&phone=&fresh=1
 //   GET /v1/health                   status layanan (tanpa auth, untuk monitoring)
+//   GET /test                        konsol tes di browser (tanpa auth, halaman statis)
 //
 // Auth (kecuali /v1/health): header X-API-Key, kunci dari env
 // OPENONGKIR_API_KEY. Bila env tidak diset, kunci acak dibuat saat start
@@ -20,6 +21,8 @@ import { createTracker } from './tracker.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 // Versi dari package.json (satu sumber — jangan hardcode di sini).
 const VERSION = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+// Halaman konsol tes (satu file statis, dibaca sekali saat start).
+const TEST_PAGE = readFileSync(join(ROOT, 'public', 'test.html'));
 const RATE_LIMIT_PER_MIN = 60;
 const RATE_WINDOW_MS = 60_000;
 const MIN_WEIGHT_G = 100;
@@ -84,12 +87,22 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
         return;
       }
 
-      // /v1/health sengaja tanpa auth (untuk monitoring / Uptime Kuma).
-      if (path !== '/v1/health') {
+      // /v1/health sengaja tanpa auth (untuk monitoring / Uptime Kuma);
+      // /test juga tanpa auth (halaman statis — API key dimasukkan di halaman).
+      if (path !== '/v1/health' && path !== '/test') {
         if (!apiKey || req.headers['x-api-key'] !== apiKey) {
           json(res, 401, { success: false, error: 'API key tidak valid. Kirim header X-API-Key.' });
           return;
         }
+      }
+
+      if (path === '/test') {
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Content-Length': TEST_PAGE.length,
+        });
+        res.end(TEST_PAGE);
+        return;
       }
 
       if (path === '/v1/health') {

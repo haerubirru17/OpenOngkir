@@ -12,6 +12,16 @@ cek resi selalu live ke kurir.
   Respons sukses selalu diawali `"success": true`; respons gagal
   `"success": false` + `"error"` berisi pesan yang bisa ditampilkan.
 
+## Konsol tes
+
+Untuk mengetes API dari browser tanpa curl, buka `/test` di base URL
+(mis. `https://ongkir.lightvela.my.id/test`). Halaman ini tidak butuh
+auth untuk dibuka, tapi tiap panggilan API dari halaman memakai
+`X-API-Key` yang diisi di halaman (tersimpan di localStorage browser).
+Konsol ini bisa cek ongkir (dengan pemilih wilayah berjenjang), cek
+resi (dengan timeline perjalanan), dan menampilkan status layanan +
+respons JSON mentah tiap tes.
+
 ## Autentikasi
 
 Semua endpoint kecuali `/v1/health` wajib mengirim header:

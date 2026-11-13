@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konsol Tes OpenOngkir</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #5c5c5c;
+    --line: #e3e3e0;
+    --field-border: #c9c9c9;
+    --accent: #166534;
+    --accent-soft: #e8f5ec;
+    --danger: #b91c1c;
+    --danger-soft: #fdf2f2;
+    --amber: #92400e;
+    --amber-soft: #fdf6ec;
+    --pre-bg: #f7f7f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto;
+    max-width: 720px;
+    padding: 24px 16px 48px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink);
+    background: #fff;
+  }
+  ::selection { background: #cde9d4; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 6px; font-weight: 700; }
+  h2 { font-size: 1.15rem; margin: 0 0 14px; font-weight: 650; }
+  p { margin: 0 0 12px; }
+  .lede { color: var(--muted); margin-bottom: 0; }
+  header { padding-bottom: 20px; }
+  section { padding: 22px 0; border-top: 1px solid var(--line); }
+  .hint { font-size: 0.85rem; color: var(--muted); }
+  .field { margin-bottom: 14px; }
+  label, legend {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  fieldset { border: 0; padding: 0; margin: 0 0 14px; }
+  input[type="text"], input[type="password"], input[type="number"], select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--field-border);
+    border-radius: 6px;
+  }
+  input:disabled, select:disabled { background: #f4f4f2; color: #8a8a8a; }
+  input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    font-weight: 400;
+    font-size: 1rem;
+    margin-bottom: 2px;
+    cursor: pointer;
+  }
+  .checks { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button {
+    min-height: 44px;
+    padding: 0 20px;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+  .btn-secondary { background: #fff; color: var(--ink); border: 1px solid var(--field-border); }
+  .grid-2 { display: grid; gap: 0 20px; }
+  @media (min-width: 640px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+  dl.stats { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; font-size: 0.95rem; }
+  dl.stats dt { color: var(--muted); }
+  dl.stats dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; white-space: nowrap; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .error-box {
+    border: 1px solid #e5a3a3;
+    background: var(--danger-soft);
+    color: #7f1d1d;
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin: 12px 0;
+    font-size: 0.95rem;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--field-border);
+    color: var(--muted);
+  }
+  .tag-ok { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .tag-warn { color: var(--amber); border-color: #d9b48a; background: var(--amber-soft); }
+  .tag-bad { color: var(--danger); border-color: #e5a3a3; background: var(--danger-soft); }
+  .result-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; margin: 12px 0 4px; }
+  .result-head strong { font-size: 1.05rem; }
+  ol.timeline { list-style: none; margin: 14px 0 0; padding: 0 0 0 18px; border-left: 1px solid #d4d4d4; }
+  ol.timeline li { margin-bottom: 14px; position: relative; }
+  ol.timeline li::before {
+    content: "";
+    position: absolute;
+    left: -23px;
+    top: 8px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--accent);
+  }
+  ol.timeline .t-time { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ol.timeline .t-loc { font-weight: 600; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; color: var(--accent); }
+  pre {
+    overflow-x: auto;
+    background: var(--pre-bg);
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .empty { color: var(--muted); font-size: 0.95rem; }
+  footer { border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Konsol Tes OpenOngkir</h1>
+  <p class="lede">Tes API cek ongkir dan cek resi langsung dari browser, tanpa curl.</p>
+</header>
+
+<section id="kunci">
+  <h2>API key</h2>
+  <form id="key-form" class="row">
+    <div class="field" style="flex: 1 1 260px; margin-bottom: 0;">
+      <label for="api-key">Kunci API</label>
+      <input type="password" id="api-key" name="api-key" autocomplete="off" placeholder="Tempel kunci API di sini">
+    </div>
+    <button type="submit" class="btn-primary">Simpan</button>
+    <button type="button" id="key-forget" class="btn-secondary">Lupakan</button>
+  </form>
+  <p class="hint" style="margin-top: 10px;">Kunci ada di file <code>.env</code> di server (<code>~/OpenOngkir/.env</code>, variabel <code>OPENONGKIR_API_KEY</code>). Kunci disimpan di browser ini saja (localStorage) dan hanya dikirim ke API OpenOngkir.</p>
+  <p id="key-status" class="hint" aria-live="polite"></p>
+</section>
+
+<section id="health">
+  <h2>Status layanan</h2>
+  <div class="row" style="margin-bottom: 12px;">
+    <button type="button" id="health-refresh" class="btn-secondary">Muat ulang</button>
+    <span class="hint">Tidak butuh API key.</span>
+  </div>
+  <div id="health-result"><p class="empty">Memuat…</p></div>
+</section>
+
+<section id="ongkir">
+  <h2>Cek ongkir</h2>
+  <form id="cost-form">
+    <div class="grid-2">
+      <div>
+        <div class="field">
+          <label for="origin-prov">Asal — Provinsi</label>
+          <select id="origin-prov" name="origin-prov"></select>
+        </div>
+        <div class="field">
+          <label for="origin-kab">Asal — Kab/Kota</label>
+          <select id="origin-kab" name="origin-kab" disabled></select>
+        </div>
+        <div class="field">
+          <label for="origin-kec">Asal — Kecamatan</label>
+          <select id="origin-kec" name="origin-kec" disabled></select>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label for="dest-prov">Tujuan — Provinsi</label>
+          <select id="dest-prov" name="dest-prov"></select>
+        </div>
+        <div class="field">
+          <label for="dest-kab">Tujuan — Kab/Kota</label>
+          <select id="dest-kab" name="dest-kab" disabled></select>
+        </div>
+        <div class="field">
+          <label for="dest-kec">Tujuan — Kecamatan</label>
+          <select id="dest-kec" name="dest-kec" disabled></select>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="weight">Berat (gram)</label>
+      <input type="number" id="weight" name="weight" value="1000" min="100" max="30000" step="1" inputmode="numeric">
+    </div>
+    <fieldset>
+      <legend>Kurir</legend>
+      <div class="checks" id="courier-checks"></div>
+    </fieldset>
+    <label class="check"><input type="checkbox" id="cost-fresh"> Panen ulang dari kurir (fresh=1, abaikan DB)</label>
+    <button type="submit" class="btn-primary">Cek ongkir</button>
+  </form>
+  <div id="cost-result"><p class="empty">Belum ada hasil — isi form lalu tekan Cek ongkir.</p></div>
+  <details id="cost-raw-wrap" hidden>
+    <summary>Respons JSON</summary>
+    <pre id="cost-raw"></pre>
+  </details>
+</section>
+
+<section id="resi">
+  <h2>Cek resi</h2>
+  <form id="track-form">
+    <div class="field">
+      <label for="track-courier">Kurir</label>
+      <select id="track-courier" name="track-courier"></select>
+    </div>
+    <div class="field">
+      <label for="awb">Nomor resi</label>
+      <input type="text" id="awb" name="awb" autocomplete="off" placeholder="Nomor resi" autocapitalize="characters">
+    </div>
+    <div class="field">
+      <label for="phone">Digit terakhir HP penerima</label>
+      <input type="text" id="phone" name="phone" autocomplete="off" inputmode="numeric" placeholder="JNE: 5 digit, J&amp;T: 4 digit">
+      <p class="hint">JNE butuh 5 digit terakhir, J&amp;T 4 digit terakhir nomor HP penerima. Kurir lain tidak butuh digit ini.</p>
+    </div>
+    <label class="check"><input type="checkbox" id="track-fresh"> Tanya ulang ke kurir (fresh=1, abaikan cache)</label>
+    <button type="submit" class="btn-primary">Lacak resi</button>
+  </form>
+  <div id="track-result"><p class="empty">Belum ada hasil — isi form lalu tekan Lacak resi.</p></div>
+  <details id="track-raw-wrap" hidden>
+    <summary>Respons JSON</summary>
+    <pre id="track-raw"></pre>
+  </details>
+</section>
+
+<footer>
+  <p>OpenOngkir v1 — konsol tes ini memanggil endpoint <code>/v1/health</code>, <code>/v1/wilayah</code>, <code>/v1/cost</code>, dan <code>/v1/track</code> di server yang sama. Dokumentasi lengkap: <code>docs/API.md</code>.</p>
+</footer>
+
+<script>
+'use strict';
+const KEY_NAME = 'openongkir-api-key';
+const COURIERS = [
+  ['jne', 'JNE Express'],
+  ['jnt', 'J&T Express'],
+  ['sicepat', 'SiCepat'],
+  ['pos', 'POS Indonesia'],
+  ['anteraja', 'AnterAja'],
+];
+const STATUS_ID = {
+  DELIVERED: 'Sudah sampai',
+  ON_DELIVERY: 'Sedang diantar',
+  IN_TRANSIT: 'Dalam perjalanan',
+  ON_PROCESS: 'Diproses',
+  RETURN_TO_SENDER: 'Dikembalikan ke pengirim',
+};
+const $ = (id) => document.getElementById(id);
+const rp = new Intl.NumberFormat('id-ID');
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[c]));
+
+const getKey = () => localStorage.getItem(KEY_NAME) || '';
+const fmtRp = (n) => 'Rp ' + rp.format(n);
+const fmtTime = (v) => {
+  if (!v) return '—';
+  const d = new Date(v);
+  if (!Number.isNaN(d.getTime())) {
+    return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  return String(v);
+};
+const fmtUptime = (s) => {
+  if (s == null) return '—';
+  if (s < 60) return s + ' detik';
+  if (s < 3600) return Math.floor(s / 60) + ' menit';
+  if (s < 86400) return Math.floor(s / 3600) + ' jam';
+  return Math.floor(s / 86400) + ' hari';
+};
+
+async function api(path, withKey) {
+  const headers = {};
+  if (withKey) headers['X-API-Key'] = getKey();
+  const res = await fetch(path, { headers });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body.error || ('HTTP ' + res.status));
+    err.status = res.status;
+    err.body = body;
+    throw err;
+  }
+  return body;
+}
+
+function errorBox(err, hint) {
+  const status = err.status ? 'HTTP ' + err.status + ' — ' : '';
+  return '<div class="error-box" role="alert"><strong>' + esc(status) + '</strong>' + esc(err.message) +
+    (hint ? '<br>' + esc(hint) : '') + '</div>';
+}
+function showRaw(wrapId, preId, body) {
+  $(wrapId).hidden = false;
+  $(preId).textContent = JSON.stringify(body, null, 2);
+}
+
+// ---- API key ----
+function refreshKeyStatus() {
+  const saved = Boolean(getKey());
+  $('key-status').textContent = saved
+    ? 'API key tersimpan di browser ini.'
+    : 'Belum ada API key tersimpan — cek ongkir dan cek resi butuh API key.';
+  $('api-key').value = saved ? getKey() : '';
+}
+$('key-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const v = $('api-key').value.trim();
+  if (!v) { $('key-status').textContent = 'Isi dulu API key-nya.'; return; }
+  localStorage.setItem(KEY_NAME, v);
+  refreshKeyStatus();
+  loadProvinces();
+});
+$('key-forget').addEventListener('click', () => {
+  localStorage.removeItem(KEY_NAME);
+  refreshKeyStatus();
+  disableCascades('Isi API key dulu');
+});
+
+// ---- Health (tanpa key) ----
+async function loadHealth() {
+  $('health-result').innerHTML = '<p class="empty">Memuat…</p>';
+  try {
+    const b = await api('/v1/health', false);
+    const pct = b.quotes_db_pct == null ? 'belum ada quote' : b.quotes_db_pct + '%';
+    $('health-result').innerHTML =
+      '<dl class="stats">' +
+      '<dt>Versi</dt><dd>' + esc(b.version) + '</dd>' +
+      '<dt>Status</dt><dd>' + esc(b.status) + '</dd>' +
+      '<dt>Tarif tersimpan</dt><dd>' + rp.format(b.tariffs) + '</dd>' +
+      '<dt>Wilayah</dt><dd>' + rp.format(b.wilayah) + '</dd>' +
+      '<dt>Quote dari DB</dt><dd>' + rp.format(b.quotes_from_db) + '</dd>' +
+      '<dt>Quote live</dt><dd>' + rp.format(b.quotes_live) + '</dd>' +
+      '<dt>Dari DB</dt><dd>' + esc(pct) + '</dd>' +
+      '<dt>Resi di cache</dt><dd>' + rp.format(b.track_cached) + '</dd>' +
+      '<dt>Uptime</dt><dd>' + esc(fmtUptime(b.uptime_s)) + '</dd>' +
+      '<dt>Panen terakhir</dt><dd>' + esc(b.last_harvest ? fmtTime(b.last_harvest) : 'belum pernah') + '</dd>' +
+      '</dl>';
+  } catch (err) {
+    $('health-result').innerHTML = errorBox(err);
+  }
+}
+$('health-refresh').addEventListener('click', loadHealth);
+
+// ---- Pemilih wilayah berjenjang ----
+function fillSelect(sel, rows, placeholder) {
+  sel.innerHTML = '<option value="">' + esc(placeholder) + '</option>' +
+    rows.map((r) => '<option value="' + esc(r.id) + '">' + esc(r.name) + '</option>').join('');
+  sel.disabled = false;
+}
+function resetSelect(sel, placeholder) {
+  sel.innerHTML = '<option value="">' + esc(placeholder) + '</option>';
+  sel.disabled = true;
+}
+function disableCascades(msg) {
+  for (const prefix of ['origin', 'dest']) {
+    resetSelect($(prefix + '-prov'), msg);
+    resetSelect($(prefix + '-kab'), 'Pilih provinsi dulu');
+    resetSelect($(prefix + '-kec'), 'Pilih kab/kota dulu');
+  }
+}
+async function loadChildren(parentId, sel, placeholder, onErr) {
+  resetSelect(sel, 'Memuat…');
+  try {
+    const b = await api('/v1/wilayah?parent=' + encodeURIComponent(parentId), true);
+    fillSelect(sel, b.data, placeholder);
+  } catch (err) {
+    resetSelect(sel, placeholder);
+    onErr(err);
+  }
+}
+function setupCascade(prefix, resultEl) {
+  const prov = $(prefix + '-prov');
+  const kab = $(prefix + '-kab');
+  const kec = $(prefix + '-kec');
+  prov.addEventListener('change', () => {
+    resetSelect(kec, 'Pilih kab/kota dulu');
+    if (!prov.value) { resetSelect(kab, 'Pilih provinsi dulu'); return; }
+    loadChildren(prov.value, kab, 'Pilih kab/kota', (e) => { resultEl.innerHTML = errorBox(e); });
+  });
+  kab.addEventListener('change', () => {
+    if (!kab.value) { resetSelect(kec, 'Pilih kab/kota dulu'); return; }
+    loadChildren(kab.value, kec, 'Pilih kecamatan', (e) => { resultEl.innerHTML = errorBox(e); });
+  });
+}
+async function loadProvinces() {
+  if (!getKey()) { disableCascades('Isi API key dulu'); return; }
+  try {
+    const b = await api('/v1/wilayah', true);
+    fillSelect($('origin-prov'), b.data, 'Pilih provinsi');
+    fillSelect($('dest-prov'), b.data, 'Pilih provinsi');
+  } catch (err) {
+    disableCascades('Gagal memuat provinsi');
+    $('cost-result').innerHTML = errorBox(err, 'Periksa API key.');
+  }
+}
+
+// ---- Cek ongkir ----
+$('courier-checks').innerHTML = COURIERS.map(([code, name]) =>
+  '<label class="check"><input type="checkbox" name="courier" value="' + code + '" checked> ' + esc(name) + '</label>'
+).join('');
+
+$('cost-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.submitter;
+  const origin = $('origin-kec').value;
+  const dest = $('dest-kec').value;
+  const weight = Number($('weight').value);
+  const couriers = [...document.querySelectorAll('input[name="courier"]:checked')].map((c) => c.value);
+  if (!origin || !dest) {
+    $('cost-result').innerHTML = errorBox({ message: 'Pilih kecamatan asal dan tujuan dulu.' });
+    return;
+  }
+  if (!Number.isFinite(weight) || weight < 100 || weight > 30000) {
+    $('cost-result').innerHTML = errorBox({ message: 'Berat harus 100–30000 gram.' });
+    return;
+  }
+  if (couriers.length === 0) {
+    $('cost-result').innerHTML = errorBox({ message: 'Pilih minimal satu kurir.' });
+    return;
+  }
+  const q = new URLSearchParams({ origin, destination: dest, weight_g: String(weight) });
+  if (couriers.length < COURIERS.length) q.set('courier', couriers.join(','));
+  if ($('cost-fresh').checked) q.set('fresh', '1');
+  btn.disabled = true;
+  btn.textContent = 'Memuat…';
+  $('cost-result').innerHTML = '<p class="empty">Memuat…</p>';
+  try {
+    const b = await api('/v1/cost?' + q.toString(), true);
+    showRaw('cost-raw-wrap', 'cost-raw', b);
+    const rows = b.options.map((o) =>
+      '<tr><td>' + esc(o.courierName) + '</td><td>' + esc(o.service) + '</td>' +
+      '<td class="num">' + esc(fmtRp(o.price)) + '</td><td>' + esc(o.eta || '—') + '</td>' +
+      '<td>' + esc(fmtTime(o.fetched_at)) + '</td><td>' + (o.cached ? 'DB' : 'Live') + '</td></tr>'
+    ).join('');
+    const errs = (b.errors || []).map((er) =>
+      '<li><strong>' + esc(er.courierName) + ':</strong> ' + esc(er.error) + '</li>'
+    ).join('');
+    $('cost-result').innerHTML =
+      '<div class="result-head"><strong>' + esc(b.origin.name) + ' → ' + esc(b.destination.name) +
+      '</strong><span class="hint">' + esc(b.weight_kg) + ' kg · Estimasi</span></div>' +
+      '<p class="hint">' + esc(b.disclaimer) + '</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>Kurir</th><th>Layanan</th><th class="num">Harga</th>' +
+      '<th>Estimasi</th><th>Diambil</th><th>Sumber</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      (errs ? '<p><strong>Kurir yang gagal:</strong></p><ul>' + errs + '</ul>' : '');
+    loadHealth();
+  } catch (err) {
+    if (err.body) showRaw('cost-raw-wrap', 'cost-raw', err.body);
+    $('cost-result').innerHTML = errorBox(err,
+      err.status === 401 ? 'Periksa API key.' : null);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Cek ongkir';
+  }
+});
+
+// ---- Cek resi ----
+$('track-courier').innerHTML = COURIERS.map(([code, name]) =>
+  '<option value="' + code + '">' + esc(name) + '</option>'
+).join('');
+
+$('track-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.submitter;
+  const courier = $('track-courier').value;
+  const awb = $('awb').value.trim();
+  const phone = $('phone').value.trim();
+  if (!awb) {
+    $('track-result').innerHTML = errorBox({ message: 'Isi dulu nomor resinya.' });
+    return;
+  }
+  const q = new URLSearchParams({ courier, awb });
+  if (phone) q.set('phone', phone);
+  if ($('track-fresh').checked) q.set('fresh', '1');
+  btn.disabled = true;
+  btn.textContent = 'Memuat…';
+  $('track-result').innerHTML = '<p class="empty">Memuat…</p>';
+  try {
+    const b = await api('/v1/track?' + q.toString(), true);
+    showRaw('track-raw-wrap', 'track-raw', b);
+    const tagClass = b.status === 'DELIVERED' ? 'tag-ok'
+      : (b.status === 'RETURN_TO_SENDER' ? 'tag-bad' : 'tag-warn');
+    const detail = (label, v) => '<dt>' + label + '</dt><dd>' + esc(v || '—') + '</dd>';
+    const events = (b.events || []).map((ev) =>
+      '<li><div class="t-time">' + esc(fmtTime(ev.time)) + '</div>' +
+      '<div class="t-loc">' + esc(ev.location || '—') + '</div>' +
+      '<div>' + esc(ev.description || '') + '</div></li>'
+    ).join('');
+    $('track-result').innerHTML =
+      '<div class="result-head"><span class="tag ' + tagClass + '">' + esc(b.status) + '</span>' +
+      '<strong>' + esc(STATUS_ID[b.status] || b.status) + '</strong>' +
+      '<span class="hint">' + esc(b.courierName) + ' · ' + esc(b.awb) + '</span></div>' +
+      '<dl class="stats" style="margin-top: 12px;">' +
+      detail('Layanan', b.service) + detail('Pengirim', b.sender) +
+      detail('Penerima', b.recipient) + detail('Asal', b.origin) +
+      detail('Tujuan', b.destination) + detail('Diambil', fmtTime(b.fetched_at)) +
+      detail('Sumber', b.cached ? 'Cache (30 menit)' : 'Live') + '</dl>' +
+      (events
+        ? '<ol class="timeline">' + events + '</ol>'
+        : '<p class="empty" style="margin-top: 12px;">Belum ada riwayat perjalanan.</p>');
+  } catch (err) {
+    if (err.body) showRaw('track-raw-wrap', 'track-raw', err.body);
+    $('track-result').innerHTML = errorBox(err,
+      err.status === 401 ? 'Periksa API key.'
+        : (err.status === 404 ? 'Pastikan nomor resi benar dan digit HP cocok.' : null));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Lacak resi';
+  }
+});
+
+// ---- Mulai ----
+setupCascade('origin', $('cost-result'));
+setupCascade('dest', $('cost-result'));
+refreshKeyStatus();
+loadHealth();
+loadProvinces();
+</script>
+</body>
+</html>
