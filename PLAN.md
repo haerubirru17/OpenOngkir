@@ -76,10 +76,20 @@ Layanan Node + SQLite (laporan: `docs/FASE-3.md`):
   AnterAja tracking TIDAK terblokir 403 (berbeda dengan API ongkirnya).
 - PENDING: validasi resi asli butuh satu resi asli + digit HP dari user.
 
-## Fase 4 — Rilis v1
+## Fase 4 — Rilis v1 ✅ Selesai
 
-- Deploy layanan + dokumentasi API untuk konsumen.
-- Ukur: % quote ongkir yang terlayani dari DB.
+Laporan: `docs/FASE-4.md`.
+
+- Dokumentasi API konsumen di `docs/API.md` (4 endpoint, auth,
+  rate limit, kode error, catatan perilaku kurir).
+- Metrik % quote dari DB: hitungan per kurir per permintaan
+  `/v1/cost`, persisten di SQLite (`quote_stats`), tampil di
+  `/v1/health` (`quotes_from_db`, `quotes_live`, `quotes_db_pct`).
+- Versi 1.0.0 (`package.json` = satu sumber versi; `/v1/health`
+  membacanya dari sana, bukan hardcode).
+- Deploy layanan sudah live sejak Fase 2/3 (VM-1,
+  https://ongkir.lightvela.my.id) — Fase 4 merilis dokumentasi +
+  metrik + versi; deploy v1 ke VM-1 adalah langkah terpisah.
 
 ## Keputusan yang sudah dibuat
 

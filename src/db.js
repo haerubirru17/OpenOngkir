@@ -30,6 +30,7 @@ export function openDb(dbPath) {
   db.exec(readSql('schema-wilayah.sql'));
   db.exec(readSql('schema-tarif.sql'));
   db.exec(readSql('schema-track.sql'));
+  db.exec(readSql('schema-stats.sql'));
 
   // Seed wilayah sekali, bila tabel masih kosong.
   const { count } = db.prepare('SELECT COUNT(*) AS count FROM wilayah').get();
@@ -239,6 +240,28 @@ export class OpenOngkirDb {
 
   countTrackCache() {
     return this.db.prepare('SELECT COUNT(*) AS c FROM track_cache').get().c;
+  }
+
+  // ---- quote_stats (Fase 4) ----
+
+  /** Tambah hitungan quote: dari DB vs panen live (per kurir). */
+  recordQuoteStats(fromDb, live) {
+    const stmt = this.db.prepare(
+      `INSERT INTO quote_stats (name, count) VALUES (?, ?)
+       ON CONFLICT(name) DO UPDATE SET count = count + excluded.count`
+    );
+    stmt.run('from_db', fromDb);
+    stmt.run('live', live);
+  }
+
+  /** Hitungan quote kumulatif: { from_db, live }. */
+  getQuoteStats() {
+    const out = { from_db: 0, live: 0 };
+    for (const row of this.db.prepare('SELECT name, count FROM quote_stats').all()) {
+      if (row.name === 'from_db') out.from_db = row.count;
+      if (row.name === 'live') out.live = row.count;
+    }
+    return out;
   }
 
   // ---- harvest_log ----

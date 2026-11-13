@@ -275,6 +275,7 @@ export function createHarvester({
 
     let harvested = [];
     let skipped = [];
+    let liveCount = 0;
     if (missing.length > 0) {
       let toHarvest = missing;
       if (!fresh) {
@@ -290,6 +291,7 @@ export function createHarvester({
           }
         }
       }
+      liveCount = toHarvest.length;
       if (toHarvest.length > 0) {
         harvested = await harvestRoute({ originCode, destCode, weightKg, couriers: toHarvest });
       }
@@ -297,6 +299,9 @@ export function createHarvester({
       // Baca ulang dari DB agar opsi hasil panen memakai fetched_at yang tersimpan.
       dbRows = db.getFreshTariffs(originCode, destCode, weightKg, cutoff, couriers);
     }
+    // Metrik (Fase 4): hitung per kurir — dari DB vs panen live.
+    // Kurir yang dilewati negative cache tidak dihitung di keduanya.
+    db.recordQuoteStats(freshCouriers.size, liveCount);
 
     const harvestedCouriers = new Set(harvested.filter((r) => r.services.length > 0).map((r) => r.courier));
     const options = dbRows.map((r) => ({

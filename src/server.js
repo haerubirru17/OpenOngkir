@@ -11,12 +11,15 @@
 import http from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { join, dirname } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.js';
 import { createHarvester, ALL_COURIERS, COURIERS } from './harvester.js';
 import { createTracker } from './tracker.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+// Versi dari package.json (satu sumber — jangan hardcode di sini).
+const VERSION = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
 const RATE_LIMIT_PER_MIN = 60;
 const RATE_WINDOW_MS = 60_000;
 const MIN_WEIGHT_G = 100;
@@ -91,16 +94,24 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
 
       if (path === '/v1/health') {
         const last = db.lastHarvestAt();
+        const stats = db.getQuoteStats();
+        const totalQuotes = stats.from_db + stats.live;
         json(res, 200, {
           success: true,
           status: 'ok',
-          version: '0.3.0',
+          version: VERSION,
           uptime_s: Math.floor((Date.now() - startedAt) / 1000),
           tariffs: db.countTariffs(),
           courier_places: db.countCourierPlaces(),
           track_cached: db.countTrackCache(),
           wilayah: db.countWilayah(),
           last_harvest: last ? new Date(last).toISOString() : null,
+          quotes_from_db: stats.from_db,
+          quotes_live: stats.live,
+          // % quote dari DB (1 desimal); null bila belum ada quote sama sekali.
+          quotes_db_pct: totalQuotes > 0
+            ? Math.round((stats.from_db / totalQuotes) * 1000) / 10
+            : null,
         });
         return;
       }
