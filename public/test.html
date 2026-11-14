@@ -874,13 +874,13 @@
           <div id="key-create-error"></div>
         </section>
         <section class="card card-pad" aria-label="Tentang API key" style="margin-top: 20px;">
-          <h3 style="margin: 0 0 8px; font-size: 1rem; font-weight: 700;">Cara kerja kunci</h3>
+          <h3 style="margin: 0 0 8px; font-size: 1rem; font-weight: 700;">Catatan</h3>
           <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.95rem;">
-            <li style="margin-bottom: 6px;">Kunci yang dibuat di sini hanya ditampilkan sekali di respons — server menyimpan hash SHA-256-nya, bukan kunci aslinya, jadi kunci yang hilang tidak bisa ditampilkan lagi.</li>
-            <li style="margin-bottom: 6px;">Kunci yang tersimpan di browser ini bisa dilihat (ikon mata) dan disalin dari kartu Kunci tersimpan — untuk dipakai di produk lain.</li>
-            <li style="margin-bottom: 6px;">Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam. Melewati batas menjawab <code>429</code>.</li>
-            <li style="margin-bottom: 6px;">Rate limit 60 permintaan/menit/IP berlaku untuk semua key, termasuk yang baru dibuat.</li>
-            <li>Kunci yang dicabut ditolak <code>401</code>. Konsol ini tidak menampilkan daftar kunci — API tidak menyediakannya.</li>
+            <li style="margin-bottom: 6px;">Kunci hanya ditampilkan sekali saat dibuat. Server menyimpan hash SHA-256.</li>
+            <li style="margin-bottom: 6px;">Kunci tersimpan dapat dilihat dan disalin dari kartu di atas.</li>
+            <li style="margin-bottom: 6px;">Maksimal 3 kunci baru per IP per 24 jam (<code>429</code> bila lewat).</li>
+            <li style="margin-bottom: 6px;">Rate limit: 60 permintaan/menit/IP, semua key.</li>
+            <li>Kunci yang dicabut: <code>401</code>. Tidak ada endpoint daftar kunci.</li>
           </ul>
         </section>
       </section>
