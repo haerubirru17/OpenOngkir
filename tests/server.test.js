@@ -53,6 +53,19 @@ describe('server', () => {
     assert.equal(body.success, true);
     assert.equal(body.status, 'ok');
     assert.equal(body.wilayah, 7837);
+    assert.ok('last_update' in body);
+    assert.equal('last_harvest' in body, false);
+  });
+
+  it('/v1/health: last_update terisi setelah ada tarif', async () => {
+    // Rute berbeda dari tes cache di bawah, agar tidak mengisi DB-nya duluan.
+    const url = `${ctx.base}/v1/cost?origin=36.71.02&destination=32.73.01&weight_g=1000&courier=jne,jnt`;
+    const first = await (await fetch(url, { headers })).json();
+    assert.equal(first.success, true);
+    const res = await fetch(`${ctx.base}/v1/health`);
+    const body = await res.json();
+    assert.equal(typeof body.last_update, 'string');
+    assert.ok(!Number.isNaN(Date.parse(body.last_update)));
   });
 
   it('/test: halaman konsol tanpa auth', async () => {
@@ -64,6 +77,12 @@ describe('server', () => {
     assert.match(body, /id="cost-form"/);
     assert.match(body, /id="track-form"/);
     assert.match(body, /Buat API key/);
+    assert.match(body, /id="key-saved-value"/);
+    assert.match(body, /id="key-toggle"/);
+    assert.match(body, /id="key-copy-saved"/);
+    assert.doesNotMatch(body, /panen/i);
+    assert.doesNotMatch(body, /last_harvest/);
+    assert.match(body, /last_update/);
   });
 
   it('tanpa API key = 401', async () => {
@@ -156,6 +175,7 @@ describe('server: rate limit + gagal total', () => {
       const res = await fetch(`${ctx.base}/v1/cost?origin=${ORIGIN}&destination=${DEST}&courier=jne`, { headers });
       assert.equal(res.status, 502);
       const body = await res.json();
+      assert.equal(body.error, 'Tarif tidak dapat diambil dari kurir untuk rute ini.');
       assert.equal(body.errors.length, 1);
     } finally {
       await new Promise((r) => ctx.server.close(r));

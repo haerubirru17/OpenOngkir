@@ -232,7 +232,7 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
           courier_places: db.countCourierPlaces(),
           track_cached: db.countTrackCache(),
           wilayah: db.countWilayah(),
-          last_harvest: last ? new Date(last).toISOString() : null,
+          last_update: last ? new Date(last).toISOString() : null,
           quotes_from_db: stats.from_db,
           quotes_live: stats.live,
           // % quote dari DB (1 desimal); null bila belum ada quote sama sekali.
@@ -292,7 +292,7 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
         if (options.length === 0) {
           json(res, 502, {
             success: false,
-            error: 'Semua kurir gagal dipanen untuk rute ini.',
+            error: 'Tarif tidak dapat diambil dari kurir untuk rute ini.',
             errors,
           });
           return;

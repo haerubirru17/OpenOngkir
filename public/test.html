@@ -300,6 +300,12 @@
   .key-new-block p { margin: 0 0 10px; font-size: 0.9rem; }
   .key-new-block .row { display: flex; flex-wrap: wrap; gap: 10px; }
   .key-new-block input { flex: 1 1 260px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.85rem; }
+  .key-stored { margin-top: 16px; }
+  .key-stored label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+  .key-stored .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .key-stored input { flex: 1 1 260px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.85rem; }
+  .key-stored .hint { margin: 8px 0 0; }
+  .btn-icon { width: 48px; min-height: 48px; padding: 0; display: inline-grid; place-items: center; }
   .hint { font-size: 0.85rem; color: var(--muted); }
   .key-status { margin: 12px 0 0; }
 
@@ -655,7 +661,7 @@
       <a class="nav-link" href="#/dokumentasi" data-nav="dokumentasi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Dokumentasi</a>
     </nav>
     <div class="side-foot">
-      <p>OpenOngkir v1 — database tarif sendiri, dipanen dari kurir resmi.</p>
+      <p>OpenOngkir v1 — database tarif sendiri, diambil dari kurir resmi.</p>
       <p>Dokumentasi lengkap juga tersedia di <code>docs/API.md</code> pada repo.</p>
     </div>
   </aside>
@@ -673,7 +679,7 @@
       <section class="view" id="view-overview" aria-label="Overview">
         <div class="section-head">
           <h2>Overview</h2>
-          <p>Cek ongkir &amp; lacak resi dari database tarif sendiri — dipanen langsung dari kurir resmi, tanpa layanan agregator pihak ketiga. Semua harga adalah estimasi.</p>
+          <p>Cek ongkir &amp; lacak resi dari database tarif sendiri — diambil langsung dari kurir resmi, tanpa layanan agregator pihak ketiga. Semua harga adalah estimasi.</p>
         </div>
 
         <section class="card card-pad" aria-label="Status layanan">
@@ -704,7 +710,7 @@
       <section class="view" id="view-cek-ongkir" aria-label="Cek ongkir" hidden>
         <div class="section-head">
           <h2>Cek Ongkir</h2>
-          <p>Harga dibaca dari database tarif sendiri; rute yang belum ada atau sudah basi dipanen live lalu disimpan. Semua harga adalah estimasi.</p>
+          <p>Harga dibaca dari database tarif sendiri; rute yang belum ada atau sudah basi diambil langsung dari kurir lalu disimpan. Semua harga adalah estimasi.</p>
         </div>
         <section class="card card-pad" aria-label="Form cek ongkir">
           <form id="cost-form">
@@ -748,7 +754,7 @@
               <legend>Kurir</legend>
               <div class="chips" id="courier-checks"></div>
             </fieldset>
-            <label class="check"><input type="checkbox" class="plain" id="cost-fresh"> Panen ulang dari kurir (fresh=1, abaikan DB)</label>
+            <label class="check"><input type="checkbox" class="plain" id="cost-fresh"> Ambil ulang dari kurir (fresh=1, abaikan DB)</label>
             <div class="submit-row">
               <button type="submit" class="btn btn-primary btn-block"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Cek ongkir</span></button>
             </div>
@@ -832,6 +838,7 @@
                 <button type="submit" class="btn btn-secondary">Simpan</button>
               </form>
             </details>
+            <p class="hint key-status">Kunci yang dibuat di perangkat lain tidak bisa ditampilkan di sini — tempel ulang kuncinya bila masih tersimpan.</p>
             <p class="hint key-status" id="key-status" aria-live="polite"></p>
           </div>
           <div id="key-saved" hidden>
@@ -845,7 +852,15 @@
                 <button type="button" id="key-forget" class="btn btn-secondary btn-sm">Lupakan</button>
               </div>
             </div>
-            <p class="hint key-status">Kunci hanya disimpan di browser ini dan hanya dikirim ke API OpenOngkir.</p>
+            <div class="key-stored">
+              <label for="key-saved-value">Kunci tersimpan</label>
+              <div class="row">
+                <input type="password" id="key-saved-value" readonly autocomplete="off" aria-label="API key tersimpan">
+                <button type="button" id="key-toggle" class="btn btn-secondary btn-icon" aria-label="Tampilkan kunci" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button type="button" id="key-copy-saved" class="btn btn-secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Salin</span></button>
+              </div>
+              <p class="hint">Kunci hanya disimpan di browser ini — salin untuk dipakai di produk atau tes lain.</p>
+            </div>
           </div>
           <div id="key-created" hidden>
             <div class="key-new-block">
@@ -862,6 +877,7 @@
           <h3 style="margin: 0 0 8px; font-size: 1rem; font-weight: 700;">Cara kerja kunci</h3>
           <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.95rem;">
             <li style="margin-bottom: 6px;">Kunci yang dibuat di sini hanya ditampilkan sekali di respons — server menyimpan hash SHA-256-nya, bukan kunci aslinya, jadi kunci yang hilang tidak bisa ditampilkan lagi.</li>
+            <li style="margin-bottom: 6px;">Kunci yang tersimpan di browser ini bisa dilihat (ikon mata) dan disalin dari kartu Kunci tersimpan — untuk dipakai di produk lain.</li>
             <li style="margin-bottom: 6px;">Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam. Melewati batas menjawab <code>429</code>.</li>
             <li style="margin-bottom: 6px;">Rate limit 60 permintaan/menit/IP berlaku untuk semua key, termasuk yang baru dibuat.</li>
             <li>Kunci yang dicabut ditolak <code>401</code>. Konsol ini tidak menampilkan daftar kunci — API tidak menyediakannya.</li>
@@ -894,7 +910,7 @@
 
         <div class="doc-sec" id="doc-pengantar">
           <h3>Pengantar</h3>
-          <p>OpenOngkir adalah layanan cek ongkir + cek resi dengan database tarif sendiri — tanpa agregator pihak ketiga. Harga ongkir dijawab dari database (dipanen dari endpoint resmi kurir bila rute belum ada); cek resi selalu live ke kurir.</p>
+          <p>OpenOngkir adalah layanan cek ongkir + cek resi dengan database tarif sendiri — tanpa agregator pihak ketiga. Harga ongkir dijawab dari database (diambil dari endpoint resmi kurir bila rute belum ada); cek resi selalu live ke kurir.</p>
           <ul>
             <li><strong>Base URL:</strong> <code>https://ongkir.lightvela.my.id</code></li>
             <li><strong>Versi API:</strong> v1 (semua endpoint di bawah <code>/v1/</code>)</li>
@@ -946,7 +962,7 @@
   "courier_places": 8,
   "track_cached": 1,
   "wilayah": 7837,
-  "last_harvest": "2026-11-12T11:00:04.543Z",
+  "last_update": "2026-11-12T11:00:04.543Z",
   "quotes_from_db": 2,
   "quotes_live": 2,
   "quotes_db_pct": 50
@@ -962,9 +978,9 @@
                 <tr><td><code>courier_places</code></td><td>Jumlah peta kode wilayah per kurir tersimpan</td></tr>
                 <tr><td><code>track_cached</code></td><td>Jumlah hasil lacak di cache</td></tr>
                 <tr><td><code>wilayah</code></td><td>Jumlah baris wilayah (7.837: 38 provinsi, 514 kab/kota, 7.285 kecamatan)</td></tr>
-                <tr><td><code>last_harvest</code></td><td>Waktu panen tarif terakhir (<code>null</code> bila belum pernah panen)</td></tr>
+                <tr><td><code>last_update</code></td><td>Waktu pembaruan tarif terakhir (<code>null</code> bila belum pernah diperbarui)</td></tr>
                 <tr><td><code>quotes_from_db</code></td><td>Jumlah quote ongkir yang terlayani dari DB (kumulatif, per kurir)</td></tr>
-                <tr><td><code>quotes_live</code></td><td>Jumlah quote yang harus panen live (kumulatif, per kurir)</td></tr>
+                <tr><td><code>quotes_live</code></td><td>Jumlah quote yang diambil langsung dari kurir (kumulatif, per kurir)</td></tr>
                 <tr><td><code>quotes_db_pct</code></td><td>% quote dari DB, 1 desimal (<code>null</code> bila belum ada quote sama sekali)</td></tr>
               </tbody>
             </table>
@@ -1004,7 +1020,7 @@
 
         <div class="doc-sec" id="doc-cost">
           <h3><span class="method method-get">GET</span><span class="doc-path">/v1/cost</span></h3>
-          <p>Cek ongkir. Dibaca dari database sendiri; kurir yang rutenya belum ada atau sudah basi (&gt; 30 hari) dipanen live lalu disimpan.</p>
+          <p>Cek ongkir. Dibaca dari database sendiri; kurir yang rutenya belum ada atau sudah basi (&gt; 30 hari) diambil langsung dari kurir lalu disimpan.</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
             <pre>curl "https://ongkir.lightvela.my.id/v1/cost?origin=36.72.01&amp;destination=32.73.01&amp;weight_g=1000&amp;courier=jne,jnt,pos" \
@@ -1018,7 +1034,7 @@
                 <tr><td><code>destination</code></td><td><span class="req">ya</span></td><td>Kode <strong>kecamatan</strong> tujuan (mis. <code>32.73.01</code>)</td></tr>
                 <tr><td><code>weight_g</code></td><td><span class="opt">tidak</span></td><td>Berat gram, 100–30.000 (default <code>1000</code>). Dibulatkan ke atas per kg (<code>weight_kg</code>, minimal 1).</td></tr>
                 <tr><td><code>courier</code></td><td><span class="opt">tidak</span></td><td>Daftar kurir dipisah koma. Default: semua kurir. Pilihan: <code>jne</code>, <code>jnt</code>, <code>sicepat</code>, <code>anteraja</code>, <code>pos</code>. Kurir tidak dikenal menjawab <code>400</code>.</td></tr>
-                <tr><td><code>fresh</code></td><td><span class="opt">tidak</span></td><td><code>fresh=1</code> memaksa panen live untuk semua kurir (lewati DB).</td></tr>
+                <tr><td><code>fresh</code></td><td><span class="opt">tidak</span></td><td><code>fresh=1</code> memaksa pengambilan langsung dari kurir untuk semua kurir (lewati DB).</td></tr>
               </tbody>
             </table>
           </div>
@@ -1044,9 +1060,9 @@
 }</pre>
           </div>
           <ul>
-            <li><code>options</code> urut dari harga termurah. <code>cached: true</code> berarti harga diambil dari database (bukan panen baru); <code>cached: false</code> berarti baru dipanen live di permintaan ini.</li>
+            <li><code>options</code> urut dari harga termurah. <code>cached: true</code> berarti harga diambil dari database (bukan pengambilan baru); <code>cached: false</code> berarti baru diambil langsung dari kurir di permintaan ini.</li>
             <li><code>fetched_at</code> = kapan harga itu terakhir dicek live ke kurir. <code>estimate: true</code> + <code>disclaimer</code> selalu ada — harga adalah estimasi.</li>
-            <li><code>errors</code> berisi kurir yang gagal di permintaan ini. Sebagian kurir gagal tidak menggagalkan respons — selama ada minimal satu opsi, status tetap <code>200</code>. Bila tidak ada satu pun opsi yang berhasil, API menjawab <code>502</code> ("Semua kurir gagal dipanen untuk rute ini.").</li>
+            <li><code>errors</code> berisi kurir yang gagal di permintaan ini. Sebagian kurir gagal tidak menggagalkan respons — selama ada minimal satu opsi, status tetap <code>200</code>. Bila tidak ada satu pun opsi yang berhasil, API menjawab <code>502</code> ("Tarif tidak dapat diambil dari kurir untuk rute ini.").</li>
             <li>Layanan kargo (JTR/SPS/GOKIL) tidak pernah muncul di <code>options</code>.</li>
           </ul>
         </div>
@@ -1125,7 +1141,7 @@
 
         <div class="doc-sec" id="doc-api-keys">
           <h3><span class="method method-post">POST</span><span class="doc-path">/v1/api-keys</span></h3>
-          <p>Membuat API key baru. <strong>Tanpa auth</strong> — konsol dibuka terbatas untuk publik agar siapa pun bisa mencoba API sendiri. Key hanya ditampilkan sekali di respons; server tidak bisa menampilkannya lagi nanti, jadi simpan segera.</p>
+          <p>Membuat API key baru. <strong>Tanpa auth</strong> — konsol dibuka terbatas untuk publik agar siapa pun bisa mencoba API sendiri. Key hanya ditampilkan sekali di respons; server tidak bisa menampilkannya lagi nanti, jadi simpan segera. Konsol menyimpan kunci di browser ini — kunci tersimpan bisa dilihat dan disalin lagi dari bagian API Keys.</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
             <pre>curl -X POST https://ongkir.lightvela.my.id/v1/api-keys \
@@ -1159,7 +1175,7 @@
                 <tr><td><code>405</code></td><td>Metode tidak didukung</td><td>Selain <code>GET</code> (kecuali <code>POST /v1/api-keys</code>)</td></tr>
                 <tr><td><code>429</code></td><td>Rate limit</td><td>&gt; 60 permintaan/menit/IP, atau &gt; 3 pembuatan key baru per IP per 24 jam</td></tr>
                 <tr><td><code>500</code></td><td>Kesalahan internal</td><td>—</td></tr>
-                <tr><td><code>502</code></td><td>Kurir gagal</td><td>Semua kurir gagal dipanen (cost) atau kurir gagal/timeout (track)</td></tr>
+                <tr><td><code>502</code></td><td>Kurir gagal</td><td>Tarif tidak dapat diambil dari kurir (cost) atau kurir gagal/timeout (track)</td></tr>
               </tbody>
             </table>
           </div>
@@ -1182,7 +1198,7 @@
 
     <footer style="max-width: 960px; margin: 0 auto; width: 100%; padding: 20px 16px 32px;">
       <p>OpenOngkir v1 — halaman ini memanggil endpoint <code>/v1/health</code>, <code>/v1/wilayah</code>, <code>/v1/cost</code>, <code>/v1/track</code>, dan <code>/v1/api-keys</code> di server yang sama.</p>
-      <p>Harga ongkir adalah estimasi dari database tarif yang dipanen dari endpoint resmi kurir.</p>
+      <p>Harga ongkir adalah estimasi dari database tarif yang diambil dari endpoint resmi kurir.</p>
     </footer>
   </div>
 </div>
@@ -1355,17 +1371,48 @@ document.addEventListener('click', async (e) => {
 });
 
 // ---- API key ----
+const EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function setKeyMasked(masked) {
+  const input = $('key-saved-value');
+  const btn = $('key-toggle');
+  input.type = masked ? 'password' : 'text';
+  btn.innerHTML = masked ? EYE_SVG : EYE_OFF_SVG;
+  btn.setAttribute('aria-label', masked ? 'Tampilkan kunci' : 'Sembunyikan kunci');
+  btn.setAttribute('aria-pressed', String(!masked));
+}
 function refreshKeyStatus() {
   const saved = Boolean(getKey());
   $('key-none').hidden = saved;
   $('key-saved').hidden = !saved;
   $('overview-key-none').hidden = saved;
   $('overview-key-saved').hidden = !saved;
-  if (!saved) {
+  if (saved) {
+    $('key-saved-value').value = getKey();
+    setKeyMasked(true);
+  } else {
     $('key-status').textContent = 'Belum ada API key tersimpan.';
     $('api-key').value = '';
   }
 }
+$('key-toggle').addEventListener('click', () => {
+  setKeyMasked($('key-saved-value').type !== 'password');
+});
+$('key-copy-saved').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  const label = btn.querySelector('span');
+  try {
+    await navigator.clipboard.writeText(getKey());
+  } catch {
+    const input = $('key-saved-value');
+    input.type = 'text';
+    input.select();
+    document.execCommand('copy');
+    setKeyMasked(true);
+  }
+  if (label) label.textContent = 'Tersalin'; else btn.textContent = 'Tersalin';
+  setTimeout(() => { if (label) label.textContent = 'Salin'; else btn.textContent = 'Salin'; }, 2000);
+});
 $('key-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const v = $('api-key').value.trim();
@@ -1446,7 +1493,7 @@ async function loadHealth() {
       '<dt>Dari DB</dt><dd>' + esc(pct) + '</dd>' +
       '<dt>Resi di cache</dt><dd>' + rp.format(b.track_cached) + '</dd>' +
       '<dt>Uptime</dt><dd>' + esc(fmtUptime(b.uptime_s)) + '</dd>' +
-      '<dt>Panen terakhir</dt><dd>' + esc(b.last_harvest ? fmtTime(b.last_harvest) : 'belum pernah') + '</dd>' +
+      '<dt>Pembaruan terakhir</dt><dd>' + esc(b.last_update ? fmtTime(b.last_update) : 'belum pernah') + '</dd>' +
       '</dl>';
   } catch (err) {
     $('status-pill').classList.add('is-down');

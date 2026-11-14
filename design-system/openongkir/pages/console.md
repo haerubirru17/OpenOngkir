@@ -55,7 +55,7 @@ density 7 (2026-11-13).
 
 1. **Overview** — pengantar satu kalimat + status API live
    (daftar definisi dari `/v1/health`: versi, uptime, tarif, wilayah,
-   metrik quote DB/live, panen terakhir) + jalan pintas berupa
+   metrik quote DB/live, pembaruan terakhir) + jalan pintas berupa
    daftar tautan ke alat (bukan grid kartu). Status API key
    (tersimpan/belum ada) tampil sebagai satu baris + tautan.
 2. **Cek Ongkir** — form lengkap seperti sebelumnya (wilayah
@@ -63,8 +63,10 @@ density 7 (2026-11-13).
    tag Termurah, JSON mentah collapsible).
 3. **Lacak Resi** — form + timeline seperti sebelumnya.
 4. **API Keys** — tombol "Buat API key gratis" (key tampil sekali +
-   salin + auto-simpan localStorage), paste key manual, status
-   tersimpan + Ganti/Lupakan, penjelasan batas 3 key/24 jam.
+   salin + auto-simpan localStorage), paste key manual, kartu
+   "Kunci tersimpan" (kunci dari localStorage: tersembunyi default,
+   ikon mata untuk melihat, tombol Salin untuk dipakai di produk
+   lain) + Ganti/Lupakan, penjelasan batas 3 key/24 jam.
    TIDAK ada daftar key — API tidak menyediakannya.
 5. **Dokumentasi** — referensi API lengkap yang dirender di dalam
    konsol, isinya HANYA dari `docs/API.md`: pengantar (base URL,

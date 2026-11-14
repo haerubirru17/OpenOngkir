@@ -2,7 +2,7 @@
 
 OpenOngkir adalah layanan cek ongkir + cek resi dengan database tarif
 sendiri — tanpa agregator pihak ketiga. Harga ongkir dijawab dari
-database (dipanen dari endpoint resmi kurir bila rute belum ada);
+database (diambil dari endpoint resmi kurir bila rute belum ada);
 cek resi selalu live ke kurir.
 
 - **Base URL:** `https://ongkir.lightvela.my.id`
@@ -20,7 +20,9 @@ Untuk mengetes API dari browser tanpa curl, buka `/test` di base URL
 auth untuk dibuka, tapi tiap panggilan API dari halaman memakai
 `X-API-Key` yang diisi di halaman (tersimpan di localStorage browser).
 Belum punya kunci? Konsol bisa membuatkan satu lewat tombol
-"Buat API key" (lihat "POST /v1/api-keys" di bawah). Konsol ini bisa
+"Buat API key" (lihat "POST /v1/api-keys" di bawah). Kunci yang
+tersimpan di browser bisa dilihat dan disalin lagi dari bagian
+API Keys di konsol. Konsol ini bisa
 cek ongkir (dengan pemilih wilayah berjenjang), cek resi (dengan
 timeline perjalanan), dan menampilkan status layanan + respons JSON
 mentah tiap tes.
@@ -118,7 +120,7 @@ GET /v1/health
   "courier_places": 8,
   "track_cached": 1,
   "wilayah": 7837,
-  "last_harvest": "2026-11-12T11:00:04.543Z",
+  "last_update": "2026-11-12T11:00:04.543Z",
   "quotes_from_db": 2,
   "quotes_live": 2,
   "quotes_db_pct": 50
@@ -133,9 +135,9 @@ GET /v1/health
 | `courier_places` | Jumlah peta kode wilayah per kurir tersimpan |
 | `track_cached` | Jumlah hasil lacak di cache |
 | `wilayah` | Jumlah baris wilayah (7.837: 38 provinsi, 514 kab/kota, 7.285 kecamatan) |
-| `last_harvest` | Waktu panen tarif terakhir (`null` bila belum pernah panen) |
+| `last_update` | Waktu pembaruan tarif terakhir (`null` bila belum pernah diperbarui) |
 | `quotes_from_db` | Jumlah quote ongkir yang terlayani dari DB (kumulatif, per kurir) |
-| `quotes_live` | Jumlah quote yang harus panen live (kumulatif, per kurir) |
+| `quotes_live` | Jumlah quote yang diambil langsung dari kurir (kumulatif, per kurir) |
 | `quotes_db_pct` | % quote dari DB, 1 desimal (`null` bila belum ada quote sama sekali) |
 
 "Quote" dihitung **per kurir per permintaan** `/v1/cost`: satu
@@ -179,7 +181,7 @@ sesuai dataset Kemendagri.
 ## GET /v1/cost
 
 Cek ongkir. Dibaca dari database sendiri; kurir yang rutenya belum
-ada atau sudah basi (> 30 hari) dipanen live lalu disimpan.
+ada atau sudah basi (> 30 hari) diambil langsung dari kurir lalu disimpan.
 
 ```
 GET /v1/cost?origin=36.72.01&destination=32.73.01&weight_g=1000&courier=jne,jnt,pos
@@ -191,7 +193,7 @@ GET /v1/cost?origin=36.72.01&destination=32.73.01&weight_g=1000&courier=jne,jnt,
 | `destination` | ya | Kode **kecamatan** tujuan (mis. `32.73.01`) |
 | `weight_g` | tidak | Berat gram, 100–30.000 (default `1000`). Dibulatkan ke atas per kg (`weight_kg`, minimal 1). |
 | `courier` | tidak | Daftar kurir dipisah koma. Default: semua kurir. Pilihan: `jne`, `jnt`, `sicepat`, `anteraja`, `pos`. Kurir tidak dikenal menjawab `400`. |
-| `fresh` | tidak | `fresh=1` memaksa panen live untuk semua kurir (lewati DB). |
+| `fresh` | tidak | `fresh=1` memaksa pengambilan langsung dari kurir untuk semua kurir (lewati DB). |
 
 Contoh respons (rute Cilegon–Bandung, 1 kg; harga terverifikasi live):
 
@@ -222,8 +224,8 @@ Contoh respons (rute Cilegon–Bandung, 1 kg; harga terverifikasi live):
 Catatan respons:
 
 - `options` urut dari harga termurah. `cached: true` berarti harga
-  diambil dari database (bukan panen baru); `cached: false` berarti
-  baru dipanen live di permintaan ini.
+  diambil dari database (bukan pengambilan baru); `cached: false` berarti
+  baru diambil langsung dari kurir di permintaan ini.
 - `fetched_at` = kapan harga itu terakhir dicek live ke kurir.
   `estimate: true` + `disclaimer` selalu ada — harga adalah estimasi
   (lihat "Catatan penting").
@@ -231,7 +233,7 @@ Catatan respons:
   gagal tidak menggagalkan respons — selama ada minimal satu opsi,
   status tetap `200`. Bila tidak ada satu pun opsi yang berhasil
   (semua kurir gagal dan DB tidak punya tarif segar untuk rute ini),
-  API menjawab `502` (`"Semua kurir gagal dipanen untuk rute ini."`).
+  API menjawab `502` (`"Tarif tidak dapat diambil dari kurir untuk rute ini."`).
 - Layanan kargo (JTR/SPS/GOKIL) tidak pernah muncul di `options`.
 
 ## GET /v1/track
@@ -316,7 +318,7 @@ Contoh respons 404 (resi tidak ditemukan):
 | 405 | Metode tidak didukung | Selain `GET` (kecuali `POST /v1/api-keys`) |
 | 429 | Rate limit | > 60 permintaan/menit/IP, atau > 3 pembuatan key baru per IP per 24 jam |
 | 500 | Kesalahan internal | — |
-| 502 | Kurir gagal | Semua kurir gagal dipanen (cost) atau kurir gagal/timeout (track) |
+| 502 | Kurir gagal | Tarif tidak dapat diambil dari kurir (cost) atau kurir gagal/timeout (track) |
 
 ## Catatan penting
 

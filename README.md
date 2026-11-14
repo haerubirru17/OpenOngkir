@@ -21,7 +21,7 @@ Konsumen (Berbirru, dll) --> API OpenOngkir --> DB sendiri (wilayah + tarif)
                                                         endpoint resmi kurir
 ```
 
-- Cek ongkir baca DB sendiri. Rute belum ada, dipanen sekali lalu disimpan.
+- Cek ongkir baca DB sendiri. Rute belum ada, diambil sekali dari kurir lalu disimpan.
 - Wilayah dari dataset Kemendagri: 38 provinsi, 514 kab/kota, 7.285 kecamatan.
 - Cek resi tetap live, lewat OpenResi.
 - Kurir: JNE, J&T, SiCepat, POS Indonesia, AnterAja.
@@ -59,16 +59,16 @@ fase: `docs/FASE-2.md`, `docs/FASE-3.md`, `docs/FASE-4.md`.
 - `db/seed-wilayah.sql` — 7.837 baris wilayah (Kepmendagri 2025).
 - Sumber: [aliziodev/laravel-indonesia-regions](https://github.com/aliziodev/laravel-indonesia-regions) (MIT), data cahyadsn/wilayah.
 
-## Sumber panen
+## Sumber tarif
 
 - [OpenResi](https://github.com/amayonaise/OpenResi) (MIT) — resolver ongkir + resi
-  langsung ke endpoint resmi kurir, tanpa API key. Dipakai sebagai mesin panen,
+  langsung ke endpoint resmi kurir, tanpa API key. Dipakai sebagai mesin pengambilan tarif,
   bukan sebagai database.
 
 ## Catatan
 
 - Matriks tarif penuh (asal × tujuan × kurir × berat) tidak realistis — puluhan
-  juta baris. Panen bersifat demand-driven: rute yang pernah dicek yang tersimpan.
+  juta baris. Pengambilan tarif bersifat demand-driven: rute yang pernah dicek yang tersimpan.
 - Tarif kurir berubah, jadi baris tarif punya tanggal ambil dan di-refresh berkala.
 - OpenResi repo baru (Okt 2026) dan memakai endpoint internal kurir — per kurir
-  dipantau, dan adapter dipertahankan agar sumber panen bisa diganti.
+  dipantau, dan adapter dipertahankan agar sumber tarif bisa diganti.
