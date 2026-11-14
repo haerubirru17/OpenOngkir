@@ -101,6 +101,48 @@ describe('resolvePlace (lazy courier_places)', () => {
     assert.equal(calls.search, undefined);
     db.close();
   });
+
+  it('pencarian gagal transien 2x lalu berhasil (ala SiCepat, 14 Nov)', async () => {
+    // Regresi: kegagalan jaringan pencarian (fetch failed) sempat
+    // disalahartikan sebagai "lokasi tidak ditemukan" (permanen) sehingga
+    // tidak pernah di-retry — padahal pencarian berikutnya berhasil.
+    const calls = { search: 0 };
+    const flaky = {
+      searchOrigins: async () => {
+        calls.search += 1;
+        if (calls.search <= 2) throw new Error('fetch failed');
+        return [{ code: 'TGR', label: 'Tangerang' }];
+      },
+      searchDestinations: async () => [{ code: 'BDO10000', label: 'Bandung' }],
+      calculateCost: async () => ({ success: true, services: [] }),
+    };
+    const { db, harvester } = setup({ sicepat: flaky });
+    const place = await harvester.resolvePlace(ORIGIN, 'sicepat', 'origin');
+    assert.equal(place.code, 'TGR');
+    assert.equal(calls.search, 3); // 2 gagal (percobaan 1) + 1 berhasil (percobaan 2)
+    db.close();
+  });
+
+  it('lokasi benar-benar tidak ada tetap error permanen (tanpa retry)', async () => {
+    // Penjaga: pencarian yang SEHAT tapi kosong (bukan error jaringan)
+    // tetap diklasifikasikan permanen — tidak dibuang-buang retry.
+    const calls = { search: 0 };
+    const empty = {
+      searchOrigins: async () => {
+        calls.search += 1;
+        return [];
+      },
+      searchDestinations: async () => [],
+      calculateCost: async () => ({ success: true, services: [] }),
+    };
+    const { db, harvester } = setup({ sicepat: empty });
+    await assert.rejects(
+      () => harvester.resolvePlace(ORIGIN, 'sicepat', 'origin'),
+      /tidak ditemukan di sistem SiCepat Ekspres/
+    );
+    assert.equal(calls.search, 2); // 2 query, 1 percobaan saja
+    db.close();
+  });
 });
 
 describe('harvestCourier retry', () => {

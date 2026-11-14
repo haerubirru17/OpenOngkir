@@ -209,6 +209,11 @@ export function parseLocationQuery(input) {
    */
   const findBestMatch = async (searchFn, queries = destinationQueries, fieldGetters = {}) => {
     let fallback = [];
+    // Error terakhir dari pencarian: kegagalan jaringan/API (transien)
+    // TIDAK boleh disamakan dengan "lokasi tidak ada". Bila semua query
+    // gagal tanpa satu pun hasil, error ini dilempar agar pemanggil bisa
+    // membedakan keduanya (dan me-retry yang transien).
+    let lastSearchError = null;
     const getLabel = fieldGetters.getLabel || ((it) => it.label || it.name || it.area || '');
     const getCity = fieldGetters.getCity || ((it) => it.city || it.city_name || '');
     const targetCityLower = city.toLowerCase();
@@ -217,7 +222,8 @@ export function parseLocationQuery(input) {
       let items = [];
       try {
         items = await searchFn(q);
-      } catch (_) {
+      } catch (err) {
+        lastSearchError = err;
         items = [];
       }
       if (Array.isArray(items) && items.length > 0) {
@@ -243,6 +249,10 @@ export function parseLocationQuery(input) {
       const ranked = rankMatches(fallback, fieldGetters);
       return ranked[0];
     }
+    // Tidak ada hasil SAMA SEKALI, tapi setidaknya satu pencarian error:
+    // ini kegagalan transien, bukan lokasi tak dikenal — lempar agar
+    // pemanggil me-retry. Null hanya bila semua pencarian sehat tapi kosong.
+    if (lastSearchError) throw lastSearchError;
     return null;
   };
 

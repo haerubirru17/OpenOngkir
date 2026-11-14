@@ -105,7 +105,12 @@ export class SiCepatResolver extends BaseCourierResolver {
       },
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      // HTTP error (mis. 429/500) adalah kegagalan transien — lempar agar
+      // pemanggil me-retry, jangan kembalikan [] yang disalahartikan
+      // sebagai "lokasi tidak ditemukan" (permanen).
+      throw new Error(`Gagal mencari lokasi asal SiCepat (HTTP ${res.status}).`);
+    }
     const json = await res.json().catch(() => ({}));
     const results = json?.data?.sicepat?.results || [];
 
@@ -146,7 +151,12 @@ export class SiCepatResolver extends BaseCourierResolver {
       },
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      // HTTP error (mis. 429/500) adalah kegagalan transien — lempar agar
+      // pemanggil me-retry, jangan kembalikan [] yang disalahartikan
+      // sebagai "lokasi tidak ditemukan" (permanen).
+      throw new Error(`Gagal mencari lokasi tujuan SiCepat (HTTP ${res.status}).`);
+    }
     const json = await res.json().catch(() => ({}));
     const results = json?.data?.sicepat?.results || [];
 
