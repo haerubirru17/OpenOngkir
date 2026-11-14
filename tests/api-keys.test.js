@@ -33,14 +33,14 @@ function createKey(base, label, extraHeaders = {}) {
 }
 
 describe('POST /v1/api-keys', () => {
-  it('tanpa auth = 201, key tampil sekali (64 hex), hanya hash tersimpan', async () => {
+  it('tanpa auth = 201, key tampil sekali (sk_ + 64 hex), hanya hash tersimpan', async () => {
     const ctx = await startServer();
     try {
       const res = await createKey(ctx.base, 'kunci tes');
       assert.equal(res.status, 201);
       const b = await res.json();
       assert.equal(b.success, true);
-      assert.match(b.api_key, /^[0-9a-f]{64}$/);
+      assert.match(b.api_key, /^sk_[0-9a-f]{64}$/);
       assert.equal(b.label, 'kunci tes');
       assert.match(b.created_at, /^\d{4}-\d{2}-\d{2}T/);
       assert.match(b.note, /hanya ditampilkan sekali/);
@@ -102,6 +102,21 @@ describe('POST /v1/api-keys', () => {
       // IP-B tidak terpengaruh jatah IP-A.
       const other = await createKey(ctx.base, undefined, { 'CF-Connecting-IP': '203.0.113.2' });
       assert.equal(other.status, 201);
+    } finally {
+      await stop(ctx);
+    }
+  });
+
+  it('key format lama (64 hex tanpa prefix sk_) tetap bisa auth', async () => {
+    const ctx = await startServer();
+    try {
+      // Key yang dibuat sebelum prefix sk_ diperkenalkan: hash-nya
+      // tersimpan apa adanya, auth tidak peduli format.
+      const oldKey = 'a'.repeat(64);
+      const hash = createHash('sha256').update(oldKey).digest('hex');
+      ctx.db.saveApiKey(hash, 'kunci lama', '127.0.0.1', Date.now());
+      const res = await fetch(`${ctx.base}/v1/wilayah`, { headers: { 'X-API-Key': oldKey } });
+      assert.equal(res.status, 200);
     } finally {
       await stop(ctx);
     }

@@ -67,14 +67,14 @@ Respons `201`:
 ```json
 {
   "success": true,
-  "api_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "api_key": "sk_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
   "label": "kunci tes",
   "created_at": "2026-11-13T09:00:00.000Z",
   "note": "Simpan kunci ini — hanya ditampilkan sekali."
 }
 ```
 
-(`api_key` di atas hanya contoh bentuk — 64 karakter hex.)
+(`api_key` di atas hanya contoh bentuk — prefix `sk_` + 64 karakter hex.)
 
 **Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam.**
 Melewati batas menjawab `429`:

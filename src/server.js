@@ -197,7 +197,7 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
           });
           return;
         }
-        const key = randomBytes(32).toString('hex');
+        const key = 'sk_' + randomBytes(32).toString('hex');
         const createdAt = Date.now();
         db.saveApiKey(hashApiKey(key), label, ip, createdAt);
         json(res, 201, {

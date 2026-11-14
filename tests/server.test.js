@@ -80,6 +80,8 @@ describe('server', () => {
     assert.match(body, /id="key-saved-value"/);
     assert.match(body, /id="key-toggle"/);
     assert.match(body, /id="key-copy-saved"/);
+    assert.match(body, /id="base-url-value"/);
+    assert.match(body, /id="base-url-copy"/);
     assert.doesNotMatch(body, /panen/i);
     assert.doesNotMatch(body, /last_harvest/);
     assert.match(body, /last_update/);

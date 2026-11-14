@@ -66,7 +66,9 @@ density 7 (2026-11-13).
    salin + auto-simpan localStorage), paste key manual, kartu
    "Kunci tersimpan" (kunci dari localStorage: tersembunyi default,
    ikon mata untuk melihat, tombol Salin untuk dipakai di produk
-   lain) + Ganti/Lupakan, penjelasan batas 3 key/24 jam.
+   lain) + Ganti/Lupakan, baris "Base URL" (origin halaman ini,
+   readonly + tombol Salin) agar key + base URL bisa dipakai di
+   produk user, penjelasan batas 3 key/24 jam.
    TIDAK ada daftar key — API tidak menyediakannya.
 5. **Dokumentasi** — referensi API lengkap yang dirender di dalam
    konsol, isinya HANYA dari `docs/API.md`: pengantar (base URL,

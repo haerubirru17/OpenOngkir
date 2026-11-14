@@ -872,6 +872,14 @@
             </div>
           </div>
           <div id="key-create-error"></div>
+          <div class="key-stored">
+            <label for="base-url-value">Base URL</label>
+            <div class="row">
+              <input type="text" id="base-url-value" readonly autocomplete="off" aria-label="Base URL API">
+              <button type="button" id="base-url-copy" class="btn btn-secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Salin</span></button>
+            </div>
+            <p class="hint">Pakai bersama API key untuk memanggil API dari produkmu.</p>
+          </div>
         </section>
         <section class="card card-pad" aria-label="Tentang API key" style="margin-top: 20px;">
           <h3 style="margin: 0 0 8px; font-size: 1rem; font-weight: 700;">Catatan</h3>
@@ -1153,13 +1161,13 @@
             <div class="codeblock-head"><span>Contoh respons 201</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
             <pre>{
   "success": true,
-  "api_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "api_key": "sk_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
   "label": "kunci tes",
   "created_at": "2026-11-13T09:00:00.000Z",
   "note": "Simpan kunci ini — hanya ditampilkan sekali."
 }</pre>
           </div>
-          <p>(<code>api_key</code> di atas hanya contoh bentuk — 64 karakter hex.)</p>
+          <p>(<code>api_key</code> di atas hanya contoh bentuk — prefix <code>sk_</code> + 64 karakter hex.)</p>
           <div class="note"><strong>Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam.</strong> Melewati batas menjawab <code>429</code>. Rate limit 60 permintaan/menit/IP tetap berlaku untuk semua key, termasuk key yang baru dibuat.</div>
         </div>
 
@@ -1409,6 +1417,19 @@ $('key-copy-saved').addEventListener('click', async (e) => {
     input.select();
     document.execCommand('copy');
     setKeyMasked(true);
+  }
+  if (label) label.textContent = 'Tersalin'; else btn.textContent = 'Tersalin';
+  setTimeout(() => { if (label) label.textContent = 'Salin'; else btn.textContent = 'Salin'; }, 2000);
+});
+$('base-url-copy').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  const label = btn.querySelector('span');
+  try {
+    await navigator.clipboard.writeText(window.location.origin);
+  } catch {
+    const input = $('base-url-value');
+    input.select();
+    document.execCommand('copy');
   }
   if (label) label.textContent = 'Tersalin'; else btn.textContent = 'Tersalin';
   setTimeout(() => { if (label) label.textContent = 'Salin'; else btn.textContent = 'Salin'; }, 2000);
@@ -1673,6 +1694,7 @@ $('track-form').addEventListener('submit', async (e) => {
 });
 
 // ---- Mulai ----
+$('base-url-value').value = window.location.origin;
 setupCascade('origin', $('cost-result'));
 setupCascade('dest', $('cost-result'));
 refreshKeyStatus();
