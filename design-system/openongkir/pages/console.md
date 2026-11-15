@@ -73,8 +73,8 @@ density 7 (2026-11-13).
 5. **Dokumentasi** — referensi API lengkap yang dirender di dalam
    konsol, isinya HANYA dari `docs/API.md`: pengantar (base URL,
    format), quick-start (5 langkah: buat key → panggilan pertama),
-   prompt untuk AI agent (satu tombol Salin prompt — prompt
-   tersembunyi, disalin saat diklik; placeholder
+   prompt untuk AI agent (satu tombol Bring to your agent — label
+   salin "Copied!"; prompt tersembunyi, disalin saat diklik; placeholder
    [STACK]/[FITUR]/[API KEY]), autentikasi, rate limit, kelima endpoint (metode +
    path, tabel parameter, contoh curl, contoh respons JSON, kode
    error), contoh kode (JavaScript/fetch, Python/requests, PHP/cURL

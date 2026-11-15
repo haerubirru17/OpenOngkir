@@ -104,6 +104,8 @@ describe('server', () => {
     assert.match(body, /Prompt untuk AI agent/);
     assert.match(body, /id="copy-agent-prompt"/);
     assert.match(body, /data-copy-from="#agent-prompt-text"/);
+    assert.match(body, /id="copy-agent-prompt"[^>]*>Bring to your agent</);
+    assert.match(body, /data-copied-label="Copied!"/);
     assert.match(body, /<script type="text\/plain" id="agent-prompt-text">/);
     assert.match(body, /\[STACK\]/);
     assert.doesNotMatch(body, /Prompt integrasi OpenOngkir/);

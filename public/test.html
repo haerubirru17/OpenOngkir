@@ -957,7 +957,7 @@
         <div class="doc-sec" id="doc-agent-prompt">
           <h3>Prompt untuk AI agent</h3>
           <p>Salin prompt, isi 3 placeholder (<code>[STACK]</code>, <code>[FITUR]</code>, <code>[API KEY]</code>), tempel ke agent-mu (ChatGPT, Claude, Cursor).</p>
-          <button type="button" class="btn btn-primary btn-sm" id="copy-agent-prompt" data-copy-from="#agent-prompt-text">Salin prompt</button>
+          <button type="button" class="btn btn-primary btn-sm" id="copy-agent-prompt" data-copy-from="#agent-prompt-text" data-copied-label="Copied!">Bring to your agent</button>
           <script type="text/plain" id="agent-prompt-text">Integrasikan OpenOngkir ke proyek saya.
 
 Konteks
@@ -1596,7 +1596,7 @@ document.addEventListener('click', async (e) => {
     document.execCommand('copy');
     ta.remove();
   }
-  btn.textContent = 'Tersalin';
+  btn.textContent = btn.getAttribute('data-copied-label') || 'Tersalin';
   setTimeout(() => { btn.textContent = label; }, 2000);
 });
 
