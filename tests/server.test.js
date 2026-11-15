@@ -111,6 +111,15 @@ describe('server', () => {
     assert.equal(res.headers.get('location'), '/console');
   });
 
+  it('/: redirect 302 ke /console tanpa auth', async () => {
+    const res = await fetch(`${ctx.base}/`, { redirect: 'manual' });
+    assert.equal(res.status, 302);
+    assert.equal(res.headers.get('location'), '/console');
+    const followed = await fetch(`${ctx.base}/`);
+    assert.equal(followed.status, 200);
+    assert.match(followed.headers.get('content-type'), /text\/html/);
+  });
+
   it('tanpa API key = 401', async () => {
     const res = await fetch(`${ctx.base}/v1/wilayah`);
     assert.equal(res.status, 401);

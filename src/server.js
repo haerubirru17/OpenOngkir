@@ -5,10 +5,11 @@
 //   GET /v1/track?courier=&awb=&phone=&fresh=1
 //   GET /v1/health                   status layanan (tanpa auth, untuk monitoring)
 //   GET /console                     konsol API di browser (tanpa auth, halaman statis)
+//   GET /                            redirect 302 ke /console (sementara — slot landing page)
 //   GET /test                        redirect 301 ke /console (tautan lama)
 //   POST /v1/api-keys                buat API key baru (tanpa auth, maks 3/IP/24 jam)
 //
-// Auth (kecuali /v1/health, /console, /test, POST /v1/api-keys): header X-API-Key.
+// Auth (kecuali /, /v1/health, /console, /test, POST /v1/api-keys): header X-API-Key.
 // Kunci yang diterima: master key env OPENONGKIR_API_KEY, atau key yang
 // dibuat lewat POST /v1/api-keys (disimpan sebagai hash SHA-256).
 // Bila env tidak diset, kunci acak dibuat saat start dan dicetak ke stdout.
@@ -168,9 +169,10 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
 
       // /v1/health sengaja tanpa auth (untuk monitoring / Uptime Kuma);
       // /console juga tanpa auth (halaman statis — API key dimasukkan di halaman);
+      // / juga tanpa auth (hanya redirect ke /console);
       // /test juga tanpa auth (hanya redirect ke /console);
       // POST /v1/api-keys tanpa auth (pembuatan key publik, dibatasi per IP).
-      if (path !== '/v1/health' && path !== '/console' && path !== '/test' && !isCreateKey) {
+      if (path !== '/' && path !== '/v1/health' && path !== '/console' && path !== '/test' && !isCreateKey) {
         if (!isValidApiKey(req.headers['x-api-key'])) {
           json(res, 401, { success: false, error: 'API key tidak valid. Kirim header X-API-Key.' });
           return;
@@ -209,6 +211,14 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
           created_at: new Date(createdAt).toISOString(),
           note: 'Simpan kunci ini — hanya ditampilkan sekali.',
         });
+        return;
+      }
+
+      // 302 (bukan 301): / suatu hari bisa jadi landing page sendiri,
+      // redirect permanen yang ter-cache browser akan menghalanginya.
+      if (path === '/') {
+        res.writeHead(302, { Location: '/console' });
+        res.end();
         return;
       }
 
