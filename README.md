@@ -45,11 +45,12 @@ npm install
 OPENONGKIR_API_KEY=<kunci-acak> node src/server.js
 ```
 
-Butuh Node ≥ 24. API: `GET /v1/wilayah?parent=`,
-`GET /v1/cost?origin=&destination=&weight_g=&courier=&fresh=1`,
-`GET /v1/track?courier=&awb=&phone=&fresh=1`,
-`GET /v1/health`, `POST /v1/api-keys` (buat key baru, maks 3/IP/24 jam).
-Semua endpoint kecuali `/v1/health` dan `POST /v1/api-keys` butuh header
+Butuh Node ≥ 24. Base URL: `https://ongkir.lightvela.my.id/v1`.
+API: `GET /wilayah?parent=`,
+`GET /cost?origin=&destination=&weight_g=&courier=&fresh=1`,
+`GET /track?courier=&awb=&phone=&fresh=1`,
+`GET /health`, `POST /api-keys` (buat key baru, maks 3/IP/24 jam).
+Semua endpoint kecuali `/health` dan `POST /api-keys` butuh header
 `X-API-Key`. Dokumentasi API lengkap: `docs/API.md`. Laporan per
 fase: `docs/FASE-2.md`, `docs/FASE-3.md`, `docs/FASE-4.md`.
 
