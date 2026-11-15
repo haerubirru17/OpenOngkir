@@ -956,13 +956,12 @@
 
         <div class="doc-sec" id="doc-agent-prompt">
           <h3>Prompt untuk AI agent</h3>
-          <p>Serahkan integrasi ke AI agent (ChatGPT, Claude, Cursor, dan sejenisnya): salin prompt di bawah, isi placeholder dalam <code>[tanda kurung siku]</code>, tempel ke agent-mu.</p>
-          <div class="codeblock">
-            <div class="codeblock-head"><span>Prompt integrasi OpenOngkir</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
-            <pre>Integrasikan OpenOngkir ke proyek saya.
+          <p>Salin prompt, isi 3 placeholder (<code>[STACK]</code>, <code>[FITUR]</code>, <code>[API KEY]</code>), tempel ke agent-mu (ChatGPT, Claude, Cursor).</p>
+          <button type="button" class="btn btn-primary btn-sm" id="copy-agent-prompt" data-copy-from="#agent-prompt-text">Salin prompt</button>
+          <script type="text/plain" id="agent-prompt-text">Integrasikan OpenOngkir ke proyek saya.
 
 Konteks
-- OpenOngkir adalah API cek ongkir + lacak resi Indonesia (JNE, J&amp;T, SiCepat, POS, AnterAja) dengan database tarif sendiri.
+- OpenOngkir adalah API cek ongkir + lacak resi Indonesia (JNE, J&T, SiCepat, POS, AnterAja) dengan database tarif sendiri.
 - Referensi lengkap (baca dulu): https://raw.githubusercontent.com/haerubirru17/OpenOngkir/main/docs/API.md
 - Stack proyek saya: [STACK]
 - Fitur yang diintegrasikan: [FITUR]
@@ -986,7 +985,7 @@ Aturan wilayah
 - Cari kodenya berjenjang lewat GET /wilayah: provinsi → kabupaten → kecamatan.
 
 Aturan lacak resi
-- JNE butuh 5 digit terakhir HP penerima; J&amp;T 4 digit terakhir HP pengirim/penerima.
+- JNE butuh 5 digit terakhir HP penerima; J&T 4 digit terakhir HP pengirim/penerima.
 - Kurir lain tidak butuh digit HP (SiCepat kadang membutuhkannya untuk sebagian resi).
 - Jangan pernah meminta atau menyimpan nomor HP lengkap — cukup digit terakhir yang diminta.
 
@@ -997,11 +996,10 @@ Batas dan error
 
 Tugas
 - Integrasikan [FITUR] ke proyek [STACK] saya memakai API di atas.
-- Ikuti aturan wilayah, digit HP, dan penanganan error di atas. Tulis kode yang siap jalan + cara menguji panggilan pertamanya.</pre>
-          </div>
+- Ikuti aturan wilayah, digit HP, dan penanganan error di atas. Tulis kode yang siap jalan + cara menguji panggilan pertamanya.</script>
         </div>
 
-        <div class="doc-sec" id="doc-auth">
+<div class="doc-sec" id="doc-auth">
           <h3>Autentikasi</h3>
           <p>Semua endpoint kecuali <code>/health</code> dan <code>POST /api-keys</code> wajib mengirim header:</p>
           <div class="codeblock">
@@ -1577,25 +1575,29 @@ sidebar.addEventListener('keydown', (e) => {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 });
 
-// ---- Tombol salin di blok kode dokumentasi ----
+// ---- Tombol salin: blok kode dokumentasi + sumber tersembunyi (data-copy-from) ----
 document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-copy]');
+  const btn = e.target.closest('[data-copy], [data-copy-from]');
   if (!btn) return;
-  const pre = btn.closest('.codeblock').querySelector('pre');
-  if (!pre) return;
+  const src = btn.hasAttribute('data-copy-from')
+    ? document.querySelector(btn.getAttribute('data-copy-from'))
+    : btn.closest('.codeblock')?.querySelector('pre');
+  if (!src) return;
+  const label = btn.textContent;
   try {
-    await navigator.clipboard.writeText(pre.textContent);
+    await navigator.clipboard.writeText(src.textContent);
   } catch {
-    const sel = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(pre);
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const ta = document.createElement('textarea');
+    ta.value = src.textContent;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
     document.execCommand('copy');
-    sel.removeAllRanges();
+    ta.remove();
   }
   btn.textContent = 'Tersalin';
-  setTimeout(() => { btn.textContent = 'Salin'; }, 2000);
+  setTimeout(() => { btn.textContent = label; }, 2000);
 });
 
 // ---- API key ----

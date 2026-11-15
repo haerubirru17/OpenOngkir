@@ -1,9 +1,14 @@
 // Tes API server (port ephemeral, resolver mock, DB in-memory).
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
 import { createHarvester } from '../src/harvester.js';
 import { createServer } from '../src/server.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const API_KEY = 'tes-kunci-acak-123';
 const ORIGIN = '36.71.01';
@@ -97,7 +102,15 @@ describe('server', () => {
     assert.match(body, /id="doc-agent-prompt"/);
     assert.match(body, /#\/dokumentasi\/agent-prompt/);
     assert.match(body, /Prompt untuk AI agent/);
+    assert.match(body, /id="copy-agent-prompt"/);
+    assert.match(body, /data-copy-from="#agent-prompt-text"/);
+    assert.match(body, /<script type="text\/plain" id="agent-prompt-text">/);
     assert.match(body, /\[STACK\]/);
+    assert.doesNotMatch(body, /Prompt integrasi OpenOngkir/);
+    // Section prompt ringkas: satu tombol, tanpa blok kode yang terlihat.
+    const agentSection = body.split('id="doc-agent-prompt"')[1].split('id="doc-auth"')[0];
+    assert.doesNotMatch(agentSection, /<pre>/);
+    assert.doesNotMatch(agentSection, /class="codeblock"/);
     assert.match(body, /window\.location\.origin \+ '\/v1'/);
     assert.doesNotMatch(body, /clipboard\.writeText\(window\.location\.origin\)/);
     assert.doesNotMatch(body, /panen/i);
@@ -208,4 +221,17 @@ describe('server: rate limit + gagal total', () => {
       ctx.db.close();
     }
   });
+});
+
+// Prompt AI agent yang tersembunyi di konsol harus identik byte-per-byte
+// dengan prompt di docs/API.md (sumber kanonis) — agar keduanya tidak drift.
+// Perbandingan TANPA unescape entitas: isi <script type="text/plain"> adalah
+// raw text (browser TIDAK men-decode &amp; di sana), jadi teks yang tertanam
+// harus persis sama dengan yang disalin ke clipboard.
+it('prompt AI agent di konsol identik dengan docs/API.md', () => {
+  const docs = readFileSync(path.join(ROOT, 'docs', 'API.md'), 'utf8');
+  const docsPrompt = docs.match(/## Prompt untuk AI agent[\s\S]*?```\n([\s\S]*?)\n```/)[1];
+  const page = readFileSync(path.join(ROOT, 'public', 'test.html'), 'utf8');
+  const embedded = page.match(/<script type="text\/plain" id="agent-prompt-text">([\s\S]*?)<\/script>/)[1];
+  assert.equal(embedded, docsPrompt);
 });
