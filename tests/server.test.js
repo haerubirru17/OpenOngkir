@@ -87,6 +87,13 @@ describe('server', () => {
     assert.match(body, /updatePhoneField/);
     assert.match(body, /track-courier'\)\.addEventListener\('change', updatePhoneField\)/);
     assert.match(body, /phone-field'\)\.hidden = true/);
+    assert.match(body, /id="doc-quick-start"/);
+    assert.match(body, /#\/dokumentasi\/quick-start/);
+    assert.match(body, /id="doc-contoh-kode"/);
+    assert.match(body, /Contoh kode/);
+    assert.match(body, /JavaScript \(fetch\)/);
+    assert.match(body, /Python \(requests\)/);
+    assert.match(body, /PHP \(cURL\)/);
     assert.match(body, /window\.location\.origin \+ '\/v1'/);
     assert.doesNotMatch(body, /clipboard\.writeText\(window\.location\.origin\)/);
     assert.doesNotMatch(body, /panen/i);

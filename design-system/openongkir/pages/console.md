@@ -72,9 +72,11 @@ density 7 (2026-11-13).
    TIDAK ada daftar key — API tidak menyediakannya.
 5. **Dokumentasi** — referensi API lengkap yang dirender di dalam
    konsol, isinya HANYA dari `docs/API.md`: pengantar (base URL,
-   format), autentikasi, rate limit, kelima endpoint (metode +
+   format), quick-start (5 langkah: buat key → panggilan pertama),
+   autentikasi, rate limit, kelima endpoint (metode +
    path, tabel parameter, contoh curl, contoh respons JSON, kode
-   error), tabel kode error, catatan penting (estimasi, fetched_at,
+   error), contoh kode (JavaScript/fetch, Python/requests, PHP/cURL
+   — alur `/cost` + `/track`), tabel kode error, catatan penting (estimasi, fetched_at,
    fresh=1, digit HP JNE 5 / J&T 4, AnterAja 403, JNE
    VERIFICATION_FAILED, cache resi 30 menit). Contoh memakai data
    fiktif (repo publik). Setiap blok kode punya tombol Salin.

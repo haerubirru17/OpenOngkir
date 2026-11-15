@@ -558,7 +558,7 @@
   .doc-sec h4 { margin: 20px 0 8px; font-size: 1rem; font-weight: 700; }
   .doc-sec p { margin: 0 0 12px; max-width: 68ch; }
   .doc-sec p:last-child { margin-bottom: 0; }
-  .doc-sec ul { margin: 0 0 12px; padding-left: 20px; max-width: 68ch; }
+  .doc-sec ul, .doc-sec ol { margin: 0 0 12px; padding-left: 20px; max-width: 68ch; }
   .doc-sec li { margin-bottom: 6px; }
   .doc-sec li:last-child { margin-bottom: 0; }
   .method {
@@ -904,6 +904,7 @@
           <h3 style="margin: 0 0 4px; font-size: 1rem; font-weight: 700;">Daftar isi</h3>
           <ul class="docs-toc">
             <li><a href="#/dokumentasi/pengantar"><code>Pengantar</code><span class="toc-desc">Format respons &amp; cara memanggil API</span></a></li>
+            <li><a href="#/dokumentasi/quick-start"><code>Quick-start</code><span class="toc-desc">Buat key → panggilan pertama</span></a></li>
             <li><a href="#/dokumentasi/auth"><code>Autentikasi</code><span class="toc-desc">Header X-API-Key, master key vs key generate</span></a></li>
             <li><a href="#/dokumentasi/rate-limit"><code>Rate limit</code><span class="toc-desc">60 permintaan/menit/IP</span></a></li>
             <li><a href="#/dokumentasi/health"><code>GET /health</code><span class="toc-desc">Status layanan + metrik, tanpa auth</span></a></li>
@@ -911,6 +912,7 @@
             <li><a href="#/dokumentasi/cost"><code>GET /cost</code><span class="toc-desc">Cek ongkir dari database tarif</span></a></li>
             <li><a href="#/dokumentasi/track"><code>GET /track</code><span class="toc-desc">Cek resi live ke kurir</span></a></li>
             <li><a href="#/dokumentasi/api-keys"><code>POST /api-keys</code><span class="toc-desc">Buat API key baru, tanpa auth</span></a></li>
+            <li><a href="#/dokumentasi/contoh-kode"><code>Contoh kode</code><span class="toc-desc">JavaScript, Python, PHP</span></a></li>
             <li><a href="#/dokumentasi/errors"><code>Kode error</code><span class="toc-desc">400, 401, 404, 405, 429, 500, 502</span></a></li>
             <li><a href="#/dokumentasi/catatan"><code>Catatan penting</code><span class="toc-desc">Estimasi, cache, dan perilaku tiap kurir</span></a></li>
           </ul>
@@ -925,6 +927,30 @@
             <li><strong>Metode:</strong> <code>GET</code>, kecuali <code>POST /api-keys</code> untuk membuat kunci. Metode lain menjawab <code>405</code>.</li>
             <li><strong>Format:</strong> JSON (<code>Content-Type: application/json; charset=utf-8</code>). Respons sukses selalu diawali <code>"success": true</code>; respons gagal <code>"success": false</code> + <code>"error"</code> berisi pesan yang bisa ditampilkan.</li>
           </ul>
+        </div>
+
+        <div class="doc-sec" id="doc-quick-start">
+          <h3>Quick-start</h3>
+          <ol>
+            <li><strong>Buat API key</strong> — di bagian <a href="#/api-keys">API Keys</a> (tombol "Buat API key gratis") atau <code>POST /api-keys</code> (tanpa auth). Key hanya ditampilkan sekali; format <code>sk_</code> + 64 karakter hex.</li>
+            <li><strong>Panggil API</strong> — Base URL <code>https://ongkir.lightvela.my.id/v1</code> + header <code>X-API-Key: &lt;kunci&gt;</code> di semua endpoint kecuali <code>/health</code> dan <code>POST /api-keys</code>.</li>
+            <li><strong>Cari kode wilayah</strong> — <code>/cost</code> butuh kode <strong>kecamatan</strong> Kemendagri (bertitik, mis. <code>36.72.01</code>), bukan nama kota. Ambil berjenjang dari <code>GET /wilayah</code>: provinsi → kabupaten → kecamatan.</li>
+            <li><strong>Panggilan pertama</strong> — cek ongkir Cilegon–Bandung, 1 kg:</li>
+          </ol>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Cek ongkir (curl)</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>curl "https://ongkir.lightvela.my.id/v1/cost?origin=36.72.01&amp;destination=32.73.01&amp;weight_g=1000&amp;courier=jne,jnt,pos" \
+  -H "X-API-Key: KUNCI_ANDA"</pre>
+          </div>
+          <ol start="5">
+            <li><strong>Lacak resi</strong> — <code>GET /track</code> (JNE butuh 5 digit terakhir HP penerima, J&amp;T 4 digit):</li>
+          </ol>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Lacak resi (curl)</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>curl "https://ongkir.lightvela.my.id/v1/track?courier=jne&amp;awb=KAJ0000000000001&amp;phone=12345" \
+  -H "X-API-Key: KUNCI_ANDA"</pre>
+          </div>
+          <p>Contoh kode lengkap (JavaScript, Python, PHP): lihat <a href="#/dokumentasi/contoh-kode">Contoh kode</a> di bawah.</p>
         </div>
 
         <div class="doc-sec" id="doc-auth">
@@ -1169,6 +1195,152 @@
           </div>
           <p>(<code>api_key</code> di atas hanya contoh bentuk — prefix <code>sk_</code> + 64 karakter hex.)</p>
           <div class="note"><strong>Batas pembuatan: maksimal 3 kunci baru per IP per 24 jam.</strong> Melewati batas menjawab <code>429</code>. Rate limit 60 permintaan/menit/IP tetap berlaku untuk semua key, termasuk key yang baru dibuat.</div>
+        </div>
+
+        <div class="doc-sec" id="doc-contoh-kode">
+          <h3>Contoh kode</h3>
+          <p>Contoh siap salin untuk alur <code>/cost</code> (termasuk pencarian kode wilayah) dan <code>/track</code>. Ganti <code>API_KEY</code> dengan kunci sendiri (lihat <a href="#/dokumentasi/quick-start">Quick-start</a>). Semua contoh memakai data fiktif.</p>
+          <h4>JavaScript (fetch)</h4>
+          <p>Node ≥ 18 (fetch bawaan) atau browser. Simpan sebagai <code>.mjs</code>:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>JavaScript — cek ongkir</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>// Cek ongkir: cari kode kecamatan, lalu panggil /cost.
+const BASE_URL = 'https://ongkir.lightvela.my.id/v1';
+const API_KEY = 'sk_0123456789abcdef...';
+const headers = { 'X-API-Key': API_KEY };
+
+const wilayah = await (await fetch(`${BASE_URL}/wilayah?parent=36.72`, { headers })).json();
+const origin = wilayah.data.find((w) => w.name === 'CIBEBER').id; // '36.72.01'
+const destination = '32.73.01'; // Sukasari, Kota Bandung
+
+const cost = await (await fetch(
+  `${BASE_URL}/cost?origin=${origin}&amp;destination=${destination}&amp;weight_g=1000&amp;courier=jne,jnt,pos`,
+  { headers },
+)).json();
+for (const o of cost.options) {
+  console.log(`${o.courierName} ${o.service}: Rp ${o.price} (${o.eta})`);
+}</pre>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>JavaScript — lacak resi</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>// Lacak resi JNE (butuh 5 digit terakhir HP penerima).
+const BASE_URL = 'https://ongkir.lightvela.my.id/v1';
+const API_KEY = 'sk_0123456789abcdef...';
+
+const res = await fetch(
+  `${BASE_URL}/track?courier=jne&amp;awb=KAJ0000000000001&amp;phone=12345`,
+  { headers: { 'X-API-Key': API_KEY } },
+);
+const body = await res.json();
+if (!res.ok) {
+  console.log(`Gagal (${res.status}): ${body.error}`);
+} else {
+  console.log(`${body.status} — ${body.courierName} ${body.awb}`);
+  for (const e of body.events) console.log(`${e.time} ${e.location} ${e.description}`);
+}</pre>
+          </div>
+          <h4>Python (requests)</h4>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Python — cek ongkir</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre># Cek ongkir: cari kode kecamatan, lalu panggil /cost.
+import requests
+
+BASE_URL = 'https://ongkir.lightvela.my.id/v1'
+API_KEY = 'sk_0123456789abcdef...'
+headers = {'X-API-Key': API_KEY}
+
+wilayah = requests.get(f'{BASE_URL}/wilayah', params={'parent': '36.72'}, headers=headers).json()
+origin = next(w['id'] for w in wilayah['data'] if w['name'] == 'CIBEBER')  # '36.72.01'
+destination = '32.73.01'  # Sukasari, Kota Bandung
+
+cost = requests.get(f'{BASE_URL}/cost', params={
+    'origin': origin, 'destination': destination,
+    'weight_g': 1000, 'courier': 'jne,jnt,pos',
+}, headers=headers).json()
+for o in cost['options']:
+    print(f"{o['courierName']} {o['service']}: Rp {o['price']} ({o['eta']})")</pre>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>Python — lacak resi</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre># Lacak resi JNE (butuh 5 digit terakhir HP penerima).
+import requests
+
+BASE_URL = 'https://ongkir.lightvela.my.id/v1'
+API_KEY = 'sk_0123456789abcdef...'
+
+res = requests.get(f'{BASE_URL}/track', params={
+    'courier': 'jne', 'awb': 'KAJ0000000000001', 'phone': '12345',
+}, headers={'X-API-Key': API_KEY})
+body = res.json()
+if not res.ok:
+    print(f"Gagal ({res.status_code}): {body['error']}")
+else:
+    print(f"{body['status']} — {body['courierName']} {body['awb']}")
+    for e in body['events']:
+        print(f"{e['time']} {e['location']} {e['description']}")</pre>
+          </div>
+          <h4>PHP (cURL)</h4>
+          <p>Tanpa dependensi (ekstensi cURL + JSON bawaan PHP):</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>PHP — cek ongkir</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>&lt;?php
+// Cek ongkir: cari kode kecamatan, lalu panggil /cost.
+$baseUrl = 'https://ongkir.lightvela.my.id/v1';
+$apiKey = 'sk_0123456789abcdef...';
+
+function ooGet($url, $apiKey) {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER =&gt; true,
+        CURLOPT_HTTPHEADER =&gt; ["X-API-Key: $apiKey"],
+    ]);
+    $body = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    return [$status, json_decode($body, true)];
+}
+
+[$s, $wilayah] = ooGet("$baseUrl/wilayah?parent=36.72", $apiKey);
+$origin = null;
+foreach ($wilayah['data'] as $w) {
+    if ($w['name'] === 'CIBEBER') { $origin = $w['id']; break; } // '36.72.01'
+}
+$destination = '32.73.01'; // Sukasari, Kota Bandung
+
+[$s, $cost] = ooGet(
+    "$baseUrl/cost?origin=$origin&amp;destination=$destination&amp;weight_g=1000&amp;courier=jne,jnt,pos",
+    $apiKey
+);
+foreach ($cost['options'] as $o) {
+    echo "{$o['courierName']} {$o['service']}: Rp {$o['price']} ({$o['eta']})\n";
+}</pre>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>PHP — lacak resi</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <pre>&lt;?php
+// Lacak resi JNE (butuh 5 digit terakhir HP penerima).
+$baseUrl = 'https://ongkir.lightvela.my.id/v1';
+$apiKey = 'sk_0123456789abcdef...';
+
+$ch = curl_init("$baseUrl/track?courier=jne&amp;awb=KAJ0000000000001&amp;phone=12345");
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER =&gt; true,
+    CURLOPT_HTTPHEADER =&gt; ["X-API-Key: $apiKey"],
+]);
+$body = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+curl_close($ch);
+$track = json_decode($body, true);
+
+if ($status !== 200) {
+    echo "Gagal ($status): {$track['error']}\n";
+    exit(1);
+}
+echo "{$track['status']} — {$track['courierName']} {$track['awb']}\n";
+foreach ($track['events'] as $e) {
+    echo "{$e['time']} {$e['location']} {$e['description']}\n";
+}</pre>
+          </div>
         </div>
 
         <div class="doc-sec" id="doc-errors">

@@ -27,6 +27,36 @@ cek ongkir (dengan pemilih wilayah berjenjang), cek resi (dengan
 timeline perjalanan), dan menampilkan status layanan + respons JSON
 mentah tiap tes.
 
+## Quick-start
+
+1. **Buat API key** — di konsol `/console` (tombol "Buat API key
+   gratis") atau `POST /api-keys` (tanpa auth). Key hanya
+   ditampilkan sekali; format `sk_` + 64 karakter hex.
+2. **Panggil API** — Base URL `https://ongkir.lightvela.my.id/v1`
+   + header `X-API-Key: <kunci>` di semua endpoint kecuali
+   `/health` dan `POST /api-keys`.
+3. **Cari kode wilayah** — `/cost` butuh kode **kecamatan**
+   Kemendagri (bertitik, mis. `36.72.01`), bukan nama kota.
+   Ambil berjenjang dari `GET /wilayah`: provinsi → kabupaten →
+   kecamatan.
+4. **Panggilan pertama** — cek ongkir Cilegon–Bandung, 1 kg:
+
+```
+curl "https://ongkir.lightvela.my.id/v1/cost?origin=36.72.01&destination=32.73.01&weight_g=1000&courier=jne,jnt,pos" \
+  -H "X-API-Key: KUNCI_ANDA"
+```
+
+5. **Lacak resi** — `GET /track` (JNE butuh 5 digit terakhir HP
+   penerima, J&T 4 digit):
+
+```
+curl "https://ongkir.lightvela.my.id/v1/track?courier=jne&awb=KAJ0000000000001&phone=12345" \
+  -H "X-API-Key: KUNCI_ANDA"
+```
+
+Contoh kode lengkap (JavaScript, Python, PHP): lihat
+"Contoh kode" di bawah.
+
 ## Autentikasi
 
 Semua endpoint kecuali `/health` dan `POST /api-keys` wajib
@@ -305,6 +335,158 @@ Contoh respons 404 (resi tidak ditemukan):
   "courier": "jnt",
   "awb": "1234567890",
   "status": "NOT_FOUND"
+}
+```
+
+## Contoh kode
+
+Contoh siap salin untuk alur `/cost` (termasuk pencarian kode
+wilayah) dan `/track`. Ganti `API_KEY` dengan kunci sendiri
+(lihat "Quick-start"). Semua contoh memakai data fiktif.
+
+### JavaScript (fetch)
+
+Node ≥ 18 (fetch bawaan) atau browser. Simpan sebagai `.mjs`:
+
+```js
+// Cek ongkir: cari kode kecamatan, lalu panggil /cost.
+const BASE_URL = 'https://ongkir.lightvela.my.id/v1';
+const API_KEY = 'sk_0123456789abcdef...';
+const headers = { 'X-API-Key': API_KEY };
+
+const wilayah = await (await fetch(`${BASE_URL}/wilayah?parent=36.72`, { headers })).json();
+const origin = wilayah.data.find((w) => w.name === 'CIBEBER').id; // '36.72.01'
+const destination = '32.73.01'; // Sukasari, Kota Bandung
+
+const cost = await (await fetch(
+  `${BASE_URL}/cost?origin=${origin}&destination=${destination}&weight_g=1000&courier=jne,jnt,pos`,
+  { headers },
+)).json();
+for (const o of cost.options) {
+  console.log(`${o.courierName} ${o.service}: Rp ${o.price} (${o.eta})`);
+}
+```
+
+```js
+// Lacak resi JNE (butuh 5 digit terakhir HP penerima).
+const BASE_URL = 'https://ongkir.lightvela.my.id/v1';
+const API_KEY = 'sk_0123456789abcdef...';
+
+const res = await fetch(
+  `${BASE_URL}/track?courier=jne&awb=KAJ0000000000001&phone=12345`,
+  { headers: { 'X-API-Key': API_KEY } },
+);
+const body = await res.json();
+if (!res.ok) {
+  console.log(`Gagal (${res.status}): ${body.error}`);
+} else {
+  console.log(`${body.status} — ${body.courierName} ${body.awb}`);
+  for (const e of body.events) console.log(`${e.time} ${e.location} ${e.description}`);
+}
+```
+
+### Python (requests)
+
+```python
+# Cek ongkir: cari kode kecamatan, lalu panggil /cost.
+import requests
+
+BASE_URL = 'https://ongkir.lightvela.my.id/v1'
+API_KEY = 'sk_0123456789abcdef...'
+headers = {'X-API-Key': API_KEY}
+
+wilayah = requests.get(f'{BASE_URL}/wilayah', params={'parent': '36.72'}, headers=headers).json()
+origin = next(w['id'] for w in wilayah['data'] if w['name'] == 'CIBEBER')  # '36.72.01'
+destination = '32.73.01'  # Sukasari, Kota Bandung
+
+cost = requests.get(f'{BASE_URL}/cost', params={
+    'origin': origin, 'destination': destination,
+    'weight_g': 1000, 'courier': 'jne,jnt,pos',
+}, headers=headers).json()
+for o in cost['options']:
+    print(f"{o['courierName']} {o['service']}: Rp {o['price']} ({o['eta']})")
+```
+
+```python
+# Lacak resi JNE (butuh 5 digit terakhir HP penerima).
+import requests
+
+BASE_URL = 'https://ongkir.lightvela.my.id/v1'
+API_KEY = 'sk_0123456789abcdef...'
+
+res = requests.get(f'{BASE_URL}/track', params={
+    'courier': 'jne', 'awb': 'KAJ0000000000001', 'phone': '12345',
+}, headers={'X-API-Key': API_KEY})
+body = res.json()
+if not res.ok:
+    print(f"Gagal ({res.status_code}): {body['error']}")
+else:
+    print(f"{body['status']} — {body['courierName']} {body['awb']}")
+    for e in body['events']:
+        print(f"{e['time']} {e['location']} {e['description']}")
+```
+
+### PHP (cURL)
+
+Tanpa dependensi (ekstensi cURL + JSON bawaan PHP):
+
+```php
+<?php
+// Cek ongkir: cari kode kecamatan, lalu panggil /cost.
+$baseUrl = 'https://ongkir.lightvela.my.id/v1';
+$apiKey = 'sk_0123456789abcdef...';
+
+function ooGet($url, $apiKey) {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ["X-API-Key: $apiKey"],
+    ]);
+    $body = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    return [$status, json_decode($body, true)];
+}
+
+[$s, $wilayah] = ooGet("$baseUrl/wilayah?parent=36.72", $apiKey);
+$origin = null;
+foreach ($wilayah['data'] as $w) {
+    if ($w['name'] === 'CIBEBER') { $origin = $w['id']; break; } // '36.72.01'
+}
+$destination = '32.73.01'; // Sukasari, Kota Bandung
+
+[$s, $cost] = ooGet(
+    "$baseUrl/cost?origin=$origin&destination=$destination&weight_g=1000&courier=jne,jnt,pos",
+    $apiKey
+);
+foreach ($cost['options'] as $o) {
+    echo "{$o['courierName']} {$o['service']}: Rp {$o['price']} ({$o['eta']})\n";
+}
+```
+
+```php
+<?php
+// Lacak resi JNE (butuh 5 digit terakhir HP penerima).
+$baseUrl = 'https://ongkir.lightvela.my.id/v1';
+$apiKey = 'sk_0123456789abcdef...';
+
+$ch = curl_init("$baseUrl/track?courier=jne&awb=KAJ0000000000001&phone=12345");
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => ["X-API-Key: $apiKey"],
+]);
+$body = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+curl_close($ch);
+$track = json_decode($body, true);
+
+if ($status !== 200) {
+    echo "Gagal ($status): {$track['error']}\n";
+    exit(1);
+}
+echo "{$track['status']} — {$track['courierName']} {$track['awb']}\n";
+foreach ($track['events'] as $e) {
+    echo "{$e['time']} {$e['location']} {$e['description']}\n";
 }
 ```
 
