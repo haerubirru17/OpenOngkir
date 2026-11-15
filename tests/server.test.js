@@ -94,6 +94,10 @@ describe('server', () => {
     assert.match(body, /JavaScript \(fetch\)/);
     assert.match(body, /Python \(requests\)/);
     assert.match(body, /PHP \(cURL\)/);
+    assert.match(body, /id="doc-agent-prompt"/);
+    assert.match(body, /#\/dokumentasi\/agent-prompt/);
+    assert.match(body, /Prompt untuk AI agent/);
+    assert.match(body, /\[STACK\]/);
     assert.match(body, /window\.location\.origin \+ '\/v1'/);
     assert.doesNotMatch(body, /clipboard\.writeText\(window\.location\.origin\)/);
     assert.doesNotMatch(body, /panen/i);

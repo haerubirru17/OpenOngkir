@@ -73,7 +73,8 @@ density 7 (2026-11-13).
 5. **Dokumentasi** — referensi API lengkap yang dirender di dalam
    konsol, isinya HANYA dari `docs/API.md`: pengantar (base URL,
    format), quick-start (5 langkah: buat key → panggilan pertama),
-   autentikasi, rate limit, kelima endpoint (metode +
+   prompt untuk AI agent (siap salin, placeholder
+   [STACK]/[FITUR]/[API KEY]), autentikasi, rate limit, kelima endpoint (metode +
    path, tabel parameter, contoh curl, contoh respons JSON, kode
    error), contoh kode (JavaScript/fetch, Python/requests, PHP/cURL
    — alur `/cost` + `/track`), tabel kode error, catatan penting (estimasi, fetched_at,

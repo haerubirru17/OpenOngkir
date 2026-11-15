@@ -57,6 +57,54 @@ curl "https://ongkir.lightvela.my.id/v1/track?courier=jne&awb=KAJ0000000000001&p
 Contoh kode lengkap (JavaScript, Python, PHP): lihat
 "Contoh kode" di bawah.
 
+## Prompt untuk AI agent
+
+Serahkan integrasi ke AI agent (ChatGPT, Claude, Cursor, dan
+sejenisnya): salin prompt di bawah, isi placeholder dalam
+`[tanda kurung siku]`, tempel ke agent-mu.
+
+```
+Integrasikan OpenOngkir ke proyek saya.
+
+Konteks
+- OpenOngkir adalah API cek ongkir + lacak resi Indonesia (JNE, J&T, SiCepat, POS, AnterAja) dengan database tarif sendiri.
+- Referensi lengkap (baca dulu): https://raw.githubusercontent.com/haerubirru17/OpenOngkir/main/docs/API.md
+- Stack proyek saya: [STACK]
+- Fitur yang diintegrasikan: [FITUR]
+- API key saya: [API KEY]
+
+Koneksi
+- Base URL: https://ongkir.lightvela.my.id/v1
+- Auth: header X-API-Key: [API KEY] di semua endpoint kecuali /health dan POST /api-keys.
+- Format key: sk_ + 64 karakter hex. Key baru bisa dibuat di konsol https://ongkir.lightvela.my.id/console (bagian API Keys) atau POST /api-keys tanpa auth (maksimal 3 key baru per IP per 24 jam).
+- JANGAN pernah hardcode API key di kode. Simpan di env var OPENONGKIR_API_KEY dan pastikan tidak masuk repo (gitignore / secret manager).
+
+Endpoint
+- GET /health — status layanan + metrik, tanpa auth.
+- GET /wilayah — daftar wilayah Kemendagri (provinsi, kabupaten, kecamatan).
+- GET /cost — cek ongkir dari database tarif.
+- GET /track — lacak resi live ke kurir.
+- POST /api-keys — buat API key baru, tanpa auth.
+
+Aturan wilayah
+- /cost butuh kode kecamatan Kemendagri bertitik (mis. 36.72.01), BUKAN nama kota.
+- Cari kodenya berjenjang lewat GET /wilayah: provinsi → kabupaten → kecamatan.
+
+Aturan lacak resi
+- JNE butuh 5 digit terakhir HP penerima; J&T 4 digit terakhir HP pengirim/penerima.
+- Kurir lain tidak butuh digit HP (SiCepat kadang membutuhkannya untuk sebagian resi).
+- Jangan pernah meminta atau menyimpan nomor HP lengkap — cukup digit terakhir yang diminta.
+
+Batas dan error
+- Rate limit: 60 permintaan/menit/IP (lewat batas → 429).
+- Respons /cost bisa berisi errors per kurir (hasil parsial) — tampilkan layanan yang berhasil, jangan gagalkan seluruh permintaan.
+- Kode error: 401 (key tidak valid/dicabut), 404 (resi/wilayah tidak ditemukan), 429 (rate limit), 502 (kurir gagal merespons).
+
+Tugas
+- Integrasikan [FITUR] ke proyek [STACK] saya memakai API di atas.
+- Ikuti aturan wilayah, digit HP, dan penanganan error di atas. Tulis kode yang siap jalan + cara menguji panggilan pertamanya.
+```
+
 ## Autentikasi
 
 Semua endpoint kecuali `/health` dan `POST /api-keys` wajib
