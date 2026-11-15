@@ -1,0 +1,18 @@
+services:
+  openongkir:
+    build: .
+    image: openongkir:latest
+    container_name: openongkir
+    ports:
+      - "3000:3000"
+    environment:
+      # Wajib: kunci master API (isi di .env atau environment host).
+      - OPENONGKIR_API_KEY=${OPENONGKIR_API_KEY:?Set OPENONGKIR_API_KEY di .env atau environment}
+      - OPENONGKIR_PORT=3000
+    volumes:
+      # DB SQLite (wilayah + tarif + API key) persisten di volume ini.
+      - openongkir-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  openongkir-data:

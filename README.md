@@ -54,6 +54,44 @@ Semua endpoint kecuali `/health` dan `POST /api-keys` butuh header
 `X-API-Key`. Dokumentasi API lengkap: `docs/API.md`. Laporan per
 fase: `docs/FASE-2.md`, `docs/FASE-3.md`, `docs/FASE-4.md`.
 
+## Self-hosting
+
+Repo ini bisa di-self-host: satu service Node + SQLite, tanpa layanan
+berbayar. Butuh Node ≥ 24 (atau Docker).
+
+### Docker
+
+```bash
+cp .env.example .env   # isi OPENONGKIR_API_KEY dengan kunci acak yang kuat
+docker compose up -d
+curl localhost:3000/v1/health
+```
+
+Data tersimpan di volume `openongkir-data` (DB SQLite di `data/`).
+Konsol: <http://localhost:3000/console>.
+
+### Manual
+
+```bash
+npm ci
+OPENONGKIR_API_KEY=<kunci-acak> npm start
+```
+
+Variabel env: lihat `.env.example`. Tanpa `OPENONGKIR_API_KEY`, server
+membuat kunci sementara saat start (berlaku sampai restart).
+
+Catatan:
+
+- DB tarif mulai KOSONG dan terisi demand-driven: quote pertama tiap rute
+  diambil live dari kurir, quote berikutnya dibaca dari DB lokal.
+- Wilayah (7.837 baris) otomatis ter-seed saat start pertama.
+- Perawatan harian (refresh rute basi + spot-check) jalan otomatis di
+  dalam service tiap 24 jam. `npm run refresh` menjalankan perawatan yang
+  sama secara manual (atau via cron sistem — lihat `scripts/refresh.js`).
+- Sebagian kurir memblokir IP server tertentu: SiCepat + AnterAja
+  mengembalikan 403 dari IP VM kami, tapi jalan dari IP lain. Hasil per
+  kurir di servermu bisa berbeda.
+
 ## Data
 
 - `db/schema-wilayah.sql` — skema tabel wilayah.
