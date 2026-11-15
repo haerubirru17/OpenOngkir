@@ -1,7 +1,7 @@
-# Page Override — `/test` sebagai Konsol Profesional
+# Page Override — `/console` sebagai Konsol Profesional
 
 Overrides `design-system/openongkir/pages/test.md` dan MASTER.md untuk
-halaman `/test` saja. Mode: **Operate** (alat) + **Read** (bagian
+halaman `/console` saja. Mode: **Operate** (alat) + **Read** (bagian
 Dokumentasi). Pengunjung memakai konsol untuk bekerja: cek ongkir,
 lacak resi, kelola API key, membaca referensi API — bukan membaca
 landing page.
@@ -25,7 +25,7 @@ density 7 (2026-11-13).
 - **Daftar AVOID dihormati:** endpoint tidak dikubur (TOC + anchor),
   versi tampil live di pil topbar, state rate limit didokumentasikan
   (batas 60/menit + 429).
-- **Density 7:** jarak konsol lebih padat dari halaman `/test` lama
+- **Density 7:** jarak konsol lebih padat dari halaman konsol lama
   (padding konten 24px, gap antar-bagian 24px, sidebar 264px).
 - **Navigasi (pencarian `--domain ux`):** nav sticky tidak boleh
   menutupi konten (topbar sticky berada dalam alur flex); navigasi

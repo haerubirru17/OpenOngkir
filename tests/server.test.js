@@ -68,8 +68,8 @@ describe('server', () => {
     assert.ok(!Number.isNaN(Date.parse(body.last_update)));
   });
 
-  it('/test: halaman konsol tanpa auth', async () => {
-    const res = await fetch(`${ctx.base}/test`);
+  it('/console: halaman konsol tanpa auth', async () => {
+    const res = await fetch(`${ctx.base}/console`);
     assert.equal(res.status, 200);
     assert.match(res.headers.get('content-type'), /text\/html/);
     const body = await res.text();
@@ -87,6 +87,12 @@ describe('server', () => {
     assert.doesNotMatch(body, /panen/i);
     assert.doesNotMatch(body, /last_harvest/);
     assert.match(body, /last_update/);
+  });
+
+  it('/test: redirect 301 ke /console', async () => {
+    const res = await fetch(`${ctx.base}/test`, { redirect: 'manual' });
+    assert.equal(res.status, 301);
+    assert.equal(res.headers.get('location'), '/console');
   });
 
   it('tanpa API key = 401', async () => {

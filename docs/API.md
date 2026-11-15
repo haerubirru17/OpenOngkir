@@ -13,10 +13,10 @@ cek resi selalu live ke kurir.
   Respons sukses selalu diawali `"success": true`; respons gagal
   `"success": false` + `"error"` berisi pesan yang bisa ditampilkan.
 
-## Konsol tes
+## Konsol
 
-Untuk mengetes API dari browser tanpa curl, buka `/test` di base URL
-(mis. `https://ongkir.lightvela.my.id/test`). Halaman ini tidak butuh
+Untuk mengetes API dari browser tanpa curl, buka `/console` di base URL
+(mis. `https://ongkir.lightvela.my.id/console`). Halaman ini tidak butuh
 auth untuk dibuka, tapi tiap panggilan API dari halaman memakai
 `X-API-Key` yang diisi di halaman (tersimpan di localStorage browser).
 Belum punya kunci? Konsol bisa membuatkan satu lewat tombol
@@ -49,7 +49,7 @@ aslinya tidak pernah disimpan). Key yang dicabut ditolak `401`.
 
 ## POST /api-keys
 
-Membuat API key baru. **Tanpa auth** — konsol `/test` dibuka
+Membuat API key baru. **Tanpa auth** — konsol `/console` dibuka
 terbatas untuk publik agar siapa pun bisa mencoba API sendiri.
 Key hanya ditampilkan sekali di respons; server tidak bisa
 menampilkannya lagi nanti, jadi simpan segera.

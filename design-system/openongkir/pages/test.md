@@ -1,4 +1,4 @@
-# Page Override — `/test` (Konsol OpenOngkir)
+# Page Override — `/console` (Konsol OpenOngkir)
 
 Overrides MASTER.md for this page only. Mode: **Operate** — the visitor
 completes a task (check a shipping price, track a parcel, mint an API key).
@@ -49,4 +49,4 @@ completes a task (check a shipping price, track a parcel, mint an API key).
 - Single self-contained file (`public/test.html`): HTML+CSS+JS inline, no
   external JS library. Google Fonts link allowed with system-font fallback;
   page must render correctly with no CDN.
-- Route stays `GET /test`. No API/endpoint changes.
+- Route: `GET /console` (`GET /test` redirect 301 ke `/console`). No API/endpoint changes.

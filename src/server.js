@@ -4,10 +4,11 @@
 //   GET /v1/cost?origin=&destination=&weight_g=&courier=&fresh=1
 //   GET /v1/track?courier=&awb=&phone=&fresh=1
 //   GET /v1/health                   status layanan (tanpa auth, untuk monitoring)
-//   GET /test                        konsol tes di browser (tanpa auth, halaman statis)
+//   GET /console                     konsol API di browser (tanpa auth, halaman statis)
+//   GET /test                        redirect 301 ke /console (tautan lama)
 //   POST /v1/api-keys                buat API key baru (tanpa auth, maks 3/IP/24 jam)
 //
-// Auth (kecuali /v1/health, /test, POST /v1/api-keys): header X-API-Key.
+// Auth (kecuali /v1/health, /console, /test, POST /v1/api-keys): header X-API-Key.
 // Kunci yang diterima: master key env OPENONGKIR_API_KEY, atau key yang
 // dibuat lewat POST /v1/api-keys (disimpan sebagai hash SHA-256).
 // Bila env tidak diset, kunci acak dibuat saat start dan dicetak ke stdout.
@@ -24,8 +25,8 @@ import { createTracker } from './tracker.js';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 // Versi dari package.json (satu sumber — jangan hardcode di sini).
 const VERSION = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
-// Halaman konsol tes (satu file statis, dibaca sekali saat start).
-const TEST_PAGE = readFileSync(join(ROOT, 'public', 'test.html'));
+// Halaman konsol (satu file statis, dibaca sekali saat start).
+const CONSOLE_PAGE = readFileSync(join(ROOT, 'public', 'test.html'));
 const RATE_LIMIT_PER_MIN = 60;
 const RATE_WINDOW_MS = 60_000;
 const MIN_WEIGHT_G = 100;
@@ -166,9 +167,10 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
       }
 
       // /v1/health sengaja tanpa auth (untuk monitoring / Uptime Kuma);
-      // /test juga tanpa auth (halaman statis — API key dimasukkan di halaman);
+      // /console juga tanpa auth (halaman statis — API key dimasukkan di halaman);
+      // /test juga tanpa auth (hanya redirect ke /console);
       // POST /v1/api-keys tanpa auth (pembuatan key publik, dibatasi per IP).
-      if (path !== '/v1/health' && path !== '/test' && !isCreateKey) {
+      if (path !== '/v1/health' && path !== '/console' && path !== '/test' && !isCreateKey) {
         if (!isValidApiKey(req.headers['x-api-key'])) {
           json(res, 401, { success: false, error: 'API key tidak valid. Kirim header X-API-Key.' });
           return;
@@ -211,11 +213,17 @@ export function createServer({ db, harvester, tracker, apiKey, rateLimitPerMin =
       }
 
       if (path === '/test') {
+        res.writeHead(301, { Location: '/console' });
+        res.end();
+        return;
+      }
+
+      if (path === '/console') {
         res.writeHead(200, {
           'Content-Type': 'text/html; charset=utf-8',
-          'Content-Length': TEST_PAGE.length,
+          'Content-Length': CONSOLE_PAGE.length,
         });
-        res.end(TEST_PAGE);
+        res.end(CONSOLE_PAGE);
         return;
       }
 
