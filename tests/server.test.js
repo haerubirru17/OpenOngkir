@@ -82,6 +82,8 @@ describe('server', () => {
     assert.match(body, /id="key-copy-saved"/);
     assert.match(body, /id="base-url-value"/);
     assert.match(body, /id="base-url-copy"/);
+    assert.match(body, /window\.location\.origin \+ '\/v1'/);
+    assert.doesNotMatch(body, /clipboard\.writeText\(window\.location\.origin\)/);
     assert.doesNotMatch(body, /panen/i);
     assert.doesNotMatch(body, /last_harvest/);
     assert.match(body, /last_update/);

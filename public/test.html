@@ -815,7 +815,7 @@
       <section class="view" id="view-api-keys" aria-label="API Keys" hidden>
         <div class="section-head">
           <h2>API Keys</h2>
-          <p>Semua endpoint kecuali <code>/v1/health</code> dan <code>POST /v1/api-keys</code> butuh header <code>X-API-Key</code>. Kunci hanya disimpan di browser ini.</p>
+          <p>Semua endpoint kecuali <code>/health</code> dan <code>POST /api-keys</code> butuh header <code>X-API-Key</code>. Kunci hanya disimpan di browser ini.</p>
         </div>
         <section class="card card-pad" aria-label="API key">
           <div id="key-none">
@@ -897,7 +897,7 @@
       <section class="view" id="view-dokumentasi" aria-label="Dokumentasi" hidden>
         <div class="section-head">
           <h2>Dokumentasi API</h2>
-          <p>Referensi lengkap API OpenOngkir v1. Base URL <code>https://ongkir.lightvela.my.id</code>. Semua contoh memakai data fiktif.</p>
+          <p>Referensi lengkap API OpenOngkir v1. Base URL <code>https://ongkir.lightvela.my.id/v1</code>. Semua contoh memakai data fiktif.</p>
         </div>
 
         <section class="card card-pad" aria-label="Daftar isi dokumentasi">
@@ -906,11 +906,11 @@
             <li><a href="#/dokumentasi/pengantar"><code>Pengantar</code><span class="toc-desc">Format respons &amp; cara memanggil API</span></a></li>
             <li><a href="#/dokumentasi/auth"><code>Autentikasi</code><span class="toc-desc">Header X-API-Key, master key vs key generate</span></a></li>
             <li><a href="#/dokumentasi/rate-limit"><code>Rate limit</code><span class="toc-desc">60 permintaan/menit/IP</span></a></li>
-            <li><a href="#/dokumentasi/health"><code>GET /v1/health</code><span class="toc-desc">Status layanan + metrik, tanpa auth</span></a></li>
-            <li><a href="#/dokumentasi/wilayah"><code>GET /v1/wilayah</code><span class="toc-desc">Daftar wilayah Kemendagri</span></a></li>
-            <li><a href="#/dokumentasi/cost"><code>GET /v1/cost</code><span class="toc-desc">Cek ongkir dari database tarif</span></a></li>
-            <li><a href="#/dokumentasi/track"><code>GET /v1/track</code><span class="toc-desc">Cek resi live ke kurir</span></a></li>
-            <li><a href="#/dokumentasi/api-keys"><code>POST /v1/api-keys</code><span class="toc-desc">Buat API key baru, tanpa auth</span></a></li>
+            <li><a href="#/dokumentasi/health"><code>GET /health</code><span class="toc-desc">Status layanan + metrik, tanpa auth</span></a></li>
+            <li><a href="#/dokumentasi/wilayah"><code>GET /wilayah</code><span class="toc-desc">Daftar wilayah Kemendagri</span></a></li>
+            <li><a href="#/dokumentasi/cost"><code>GET /cost</code><span class="toc-desc">Cek ongkir dari database tarif</span></a></li>
+            <li><a href="#/dokumentasi/track"><code>GET /track</code><span class="toc-desc">Cek resi live ke kurir</span></a></li>
+            <li><a href="#/dokumentasi/api-keys"><code>POST /api-keys</code><span class="toc-desc">Buat API key baru, tanpa auth</span></a></li>
             <li><a href="#/dokumentasi/errors"><code>Kode error</code><span class="toc-desc">400, 401, 404, 405, 429, 500, 502</span></a></li>
             <li><a href="#/dokumentasi/catatan"><code>Catatan penting</code><span class="toc-desc">Estimasi, cache, dan perilaku tiap kurir</span></a></li>
           </ul>
@@ -920,16 +920,16 @@
           <h3>Pengantar</h3>
           <p>OpenOngkir adalah layanan cek ongkir + cek resi dengan database tarif sendiri — tanpa agregator pihak ketiga. Harga ongkir dijawab dari database (diambil dari endpoint resmi kurir bila rute belum ada); cek resi selalu live ke kurir.</p>
           <ul>
-            <li><strong>Base URL:</strong> <code>https://ongkir.lightvela.my.id</code></li>
-            <li><strong>Versi API:</strong> v1 (semua endpoint di bawah <code>/v1/</code>)</li>
-            <li><strong>Metode:</strong> <code>GET</code>, kecuali <code>POST /v1/api-keys</code> untuk membuat kunci. Metode lain menjawab <code>405</code>.</li>
+            <li><strong>Base URL:</strong> <code>https://ongkir.lightvela.my.id/v1</code></li>
+            <li><strong>Versi API:</strong> v1 (termasuk dalam Base URL)</li>
+            <li><strong>Metode:</strong> <code>GET</code>, kecuali <code>POST /api-keys</code> untuk membuat kunci. Metode lain menjawab <code>405</code>.</li>
             <li><strong>Format:</strong> JSON (<code>Content-Type: application/json; charset=utf-8</code>). Respons sukses selalu diawali <code>"success": true</code>; respons gagal <code>"success": false</code> + <code>"error"</code> berisi pesan yang bisa ditampilkan.</li>
           </ul>
         </div>
 
         <div class="doc-sec" id="doc-auth">
           <h3>Autentikasi</h3>
-          <p>Semua endpoint kecuali <code>/v1/health</code> dan <code>POST /v1/api-keys</code> wajib mengirim header:</p>
+          <p>Semua endpoint kecuali <code>/health</code> dan <code>POST /api-keys</code> wajib mengirim header:</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Header wajib</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
             <pre>X-API-Key: &lt;kunci&gt;</pre>
@@ -939,12 +939,12 @@
             <div class="codeblock-head"><span>Contoh respons 401</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
             <pre>{ "success": false, "error": "API key tidak valid. Kirim header X-API-Key." }</pre>
           </div>
-          <p>Kunci yang diterima ada dua jenis: master key dari env <code>OPENONGKIR_API_KEY</code> di server, dan key yang dibuat lewat <code>POST /v1/api-keys</code> (disimpan server sebagai hash SHA-256 — key aslinya tidak pernah disimpan). Key yang dicabut ditolak <code>401</code>.</p>
+          <p>Kunci yang diterima ada dua jenis: master key dari env <code>OPENONGKIR_API_KEY</code> di server, dan key yang dibuat lewat <code>POST /api-keys</code> (disimpan server sebagai hash SHA-256 — key aslinya tidak pernah disimpan). Key yang dicabut ditolak <code>401</code>.</p>
         </div>
 
         <div class="doc-sec" id="doc-rate-limit">
           <h3>Rate limit</h3>
-          <p><strong>60 permintaan/menit per IP</strong> (berlaku untuk semua endpoint, termasuk <code>/v1/health</code>). Melewati batas menjawab <code>429</code> dengan header <code>Retry-After: 60</code>:</p>
+          <p><strong>60 permintaan/menit per IP</strong> (berlaku untuk semua endpoint, termasuk <code>/health</code>). Melewati batas menjawab <code>429</code> dengan header <code>Retry-After: 60</code>:</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh respons 429</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
             <pre>{ "success": false, "error": "Terlalu banyak permintaan. Coba lagi sebentar." }</pre>
@@ -953,7 +953,7 @@
         </div>
 
         <div class="doc-sec" id="doc-health">
-          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/health</span></h3>
+          <h3><span class="method method-get">GET</span><span class="doc-path">/health</span></h3>
           <p>Status layanan + metrik. <strong>Tanpa auth</strong> (untuk monitoring).</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
@@ -993,11 +993,11 @@
               </tbody>
             </table>
           </div>
-          <p>"Quote" dihitung <strong>per kurir per permintaan</strong> <code>/v1/cost</code>: satu permintaan dengan 5 kurir yang 4 di antaranya ada di DB menghitung <code>quotes_from_db +4</code> dan <code>quotes_live +1</code>. Kurir yang dilewati karena baru saja gagal (negative cache 1 jam) tidak dihitung di keduanya.</p>
+          <p>"Quote" dihitung <strong>per kurir per permintaan</strong> <code>/cost</code>: satu permintaan dengan 5 kurir yang 4 di antaranya ada di DB menghitung <code>quotes_from_db +4</code> dan <code>quotes_live +1</code>. Kurir yang dilewati karena baru saja gagal (negative cache 1 jam) tidak dihitung di keduanya.</p>
         </div>
 
         <div class="doc-sec" id="doc-wilayah">
-          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/wilayah</span></h3>
+          <h3><span class="method method-get">GET</span><span class="doc-path">/wilayah</span></h3>
           <p>Daftar wilayah Kemendagri (kode bertitik: provinsi <code>NN</code>, kabupaten <code>NN.NN</code>, kecamatan <code>NN.NN.NN</code>).</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
@@ -1013,7 +1013,7 @@
             </table>
           </div>
           <div class="codeblock">
-            <div class="codeblock-head"><span>Contoh respons — GET /v1/wilayah (38 provinsi)</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
+            <div class="codeblock-head"><span>Contoh respons — GET /wilayah (38 provinsi)</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
             <pre>{
   "success": true,
   "data": [
@@ -1027,7 +1027,7 @@
         </div>
 
         <div class="doc-sec" id="doc-cost">
-          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/cost</span></h3>
+          <h3><span class="method method-get">GET</span><span class="doc-path">/cost</span></h3>
           <p>Cek ongkir. Dibaca dari database sendiri; kurir yang rutenya belum ada atau sudah basi (&gt; 30 hari) diambil langsung dari kurir lalu disimpan.</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
@@ -1076,7 +1076,7 @@
         </div>
 
         <div class="doc-sec" id="doc-track">
-          <h3><span class="method method-get">GET</span><span class="doc-path">/v1/track</span></h3>
+          <h3><span class="method method-get">GET</span><span class="doc-path">/track</span></h3>
           <p>Cek resi live ke kurir. Hasil yang ditemukan di-cache 30 menit; <code>fresh=1</code> memaksa cek live.</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
@@ -1148,7 +1148,7 @@
         </div>
 
         <div class="doc-sec" id="doc-api-keys">
-          <h3><span class="method method-post">POST</span><span class="doc-path">/v1/api-keys</span></h3>
+          <h3><span class="method method-post">POST</span><span class="doc-path">/api-keys</span></h3>
           <p>Membuat API key baru. <strong>Tanpa auth</strong> — konsol dibuka terbatas untuk publik agar siapa pun bisa mencoba API sendiri. Key hanya ditampilkan sekali di respons; server tidak bisa menampilkannya lagi nanti, jadi simpan segera. Konsol menyimpan kunci di browser ini — kunci tersimpan bisa dilihat dan disalin lagi dari bagian API Keys.</p>
           <div class="codeblock">
             <div class="codeblock-head"><span>Contoh request</span><button type="button" class="copy-btn" data-copy>Salin</button></div>
@@ -1178,9 +1178,9 @@
               <thead><tr><th>HTTP</th><th>Arti</th><th>Contoh pemicu</th></tr></thead>
               <tbody>
                 <tr><td><code>400</code></td><td>Input tidak valid</td><td>Kode wilayah bukan kecamatan, <code>weight_g</code> di luar 100–30.000, kurir tidak dikenal, digit HP kurang</td></tr>
-                <tr><td><code>401</code></td><td>API key tidak valid</td><td>Header <code>X-API-Key</code> tidak ada / salah / dicabut (tidak berlaku untuk <code>/v1/health</code> dan <code>POST /v1/api-keys</code>)</td></tr>
+                <tr><td><code>401</code></td><td>API key tidak valid</td><td>Header <code>X-API-Key</code> tidak ada / salah / dicabut (tidak berlaku untuk <code>/health</code> dan <code>POST /api-keys</code>)</td></tr>
                 <tr><td><code>404</code></td><td>Tidak ditemukan</td><td>Rute tidak dikenal, resi tidak ditemukan, verifikasi JNE gagal</td></tr>
-                <tr><td><code>405</code></td><td>Metode tidak didukung</td><td>Selain <code>GET</code> (kecuali <code>POST /v1/api-keys</code>)</td></tr>
+                <tr><td><code>405</code></td><td>Metode tidak didukung</td><td>Selain <code>GET</code> (kecuali <code>POST /api-keys</code>)</td></tr>
                 <tr><td><code>429</code></td><td>Rate limit</td><td>&gt; 60 permintaan/menit/IP, atau &gt; 3 pembuatan key baru per IP per 24 jam</td></tr>
                 <tr><td><code>500</code></td><td>Kesalahan internal</td><td>—</td></tr>
                 <tr><td><code>502</code></td><td>Kurir gagal</td><td>Tarif tidak dapat diambil dari kurir (cost) atau kurir gagal/timeout (track)</td></tr>
@@ -1193,11 +1193,11 @@
           <h3>Catatan penting</h3>
           <ul>
             <li><strong>Harga adalah estimasi.</strong> Tarif disimpan di database dan dianggap segar 30 hari; harga final mengikuti tarif resmi kurir saat paket diserahkan. Selalu tampilkan <code>disclaimer</code> dan <code>fetched_at</code> ke pengguna akhir. Cron refresh + spot-check harian menjaga harga tetap dekat dengan tarif live.</li>
-            <li><strong>AnterAja ongkir masih 403.</strong> API ongkir AnterAja menolak permintaan dari IP layanan (403) — kurir ini muncul di <code>errors</code> pada <code>/v1/cost</code>. Tracking AnterAja (<code>/v1/track</code>) TIDAK terblokir.</li>
+            <li><strong>AnterAja ongkir masih 403.</strong> API ongkir AnterAja menolak permintaan dari IP layanan (403) — kurir ini muncul di <code>errors</code> pada <code>/cost</code>. Tracking AnterAja (<code>/track</code>) TIDAK terblokir.</li>
             <li><strong>JNE tidak membedakan resi tidak ada vs digit HP salah.</strong> Keduanya kembali sebagai <code>VERIFICATION_FAILED</code> (404). Bila mendapat status ini, periksa kembali nomor resi DAN 5 digit terakhir HP penerima.</li>
             <li><strong>SiCepat tracking kadang lambat.</strong> Sekali waktu SiCepat menggantung lama (aliran reCAPTCHA); API memakai timeout keras 20 detik + retry, jadi satu kurir tidak menggantung respons — kegagalan muncul sebagai <code>502</code> (track) atau entri <code>errors</code> (cost), bukan hang.</li>
             <li><strong>Cache cek resi 30 menit</strong>, hanya untuk hasil "ditemukan". Resi tidak ditemukan / error tidak di-cache agar percobaan berikutnya selalu cek live lagi.</li>
-            <li><strong>Jangan kirim nomor HP lengkap</strong> ke <code>/v1/track</code> — cukup digit terakhir yang diminta (JNE 5, J&amp;T 4). Bila terlanjur mengirim nomor lengkap, API hanya memakai N digit terakhir.</li>
+            <li><strong>Jangan kirim nomor HP lengkap</strong> ke <code>/track</code> — cukup digit terakhir yang diminta (JNE 5, J&amp;T 4). Bila terlanjur mengirim nomor lengkap, API hanya memakai N digit terakhir.</li>
           </ul>
         </div>
       </section>
@@ -1205,7 +1205,7 @@
     </main>
 
     <footer style="max-width: 960px; margin: 0 auto; width: 100%; padding: 20px 16px 32px;">
-      <p>OpenOngkir v1 — halaman ini memanggil endpoint <code>/v1/health</code>, <code>/v1/wilayah</code>, <code>/v1/cost</code>, <code>/v1/track</code>, dan <code>/v1/api-keys</code> di server yang sama.</p>
+      <p>OpenOngkir v1 — halaman ini memanggil endpoint <code>/health</code>, <code>/wilayah</code>, <code>/cost</code>, <code>/track</code>, dan <code>/api-keys</code> di server yang sama.</p>
       <p>Harga ongkir adalah estimasi dari database tarif yang diambil dari endpoint resmi kurir.</p>
     </footer>
   </div>
@@ -1424,10 +1424,10 @@ $('key-copy-saved').addEventListener('click', async (e) => {
 $('base-url-copy').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   const label = btn.querySelector('span');
+  const input = $('base-url-value');
   try {
-    await navigator.clipboard.writeText(window.location.origin);
+    await navigator.clipboard.writeText(input.value);
   } catch {
-    const input = $('base-url-value');
     input.select();
     document.execCommand('copy');
   }
@@ -1694,7 +1694,7 @@ $('track-form').addEventListener('submit', async (e) => {
 });
 
 // ---- Mulai ----
-$('base-url-value').value = window.location.origin;
+$('base-url-value').value = window.location.origin + '/v1';
 setupCascade('origin', $('cost-result'));
 setupCascade('dest', $('cost-result'));
 refreshKeyStatus();

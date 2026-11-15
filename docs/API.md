@@ -5,9 +5,9 @@ sendiri — tanpa agregator pihak ketiga. Harga ongkir dijawab dari
 database (diambil dari endpoint resmi kurir bila rute belum ada);
 cek resi selalu live ke kurir.
 
-- **Base URL:** `https://ongkir.lightvela.my.id`
-- **Versi API:** v1 (semua endpoint di bawah `/v1/`)
-- **Metode:** `GET`, kecuali `POST /v1/api-keys` untuk membuat kunci.
+- **Base URL:** `https://ongkir.lightvela.my.id/v1`
+- **Versi API:** v1 (termasuk dalam Base URL).
+- **Metode:** `GET`, kecuali `POST /api-keys` untuk membuat kunci.
   Metode lain menjawab `405`.
 - **Format:** JSON (`Content-Type: application/json; charset=utf-8`).
   Respons sukses selalu diawali `"success": true`; respons gagal
@@ -20,7 +20,7 @@ Untuk mengetes API dari browser tanpa curl, buka `/test` di base URL
 auth untuk dibuka, tapi tiap panggilan API dari halaman memakai
 `X-API-Key` yang diisi di halaman (tersimpan di localStorage browser).
 Belum punya kunci? Konsol bisa membuatkan satu lewat tombol
-"Buat API key" (lihat "POST /v1/api-keys" di bawah). Kunci yang
+"Buat API key" (lihat "POST /api-keys" di bawah). Kunci yang
 tersimpan di browser bisa dilihat dan disalin lagi dari bagian
 API Keys di konsol. Konsol ini bisa
 cek ongkir (dengan pemilih wilayah berjenjang), cek resi (dengan
@@ -29,7 +29,7 @@ mentah tiap tes.
 
 ## Autentikasi
 
-Semua endpoint kecuali `/v1/health` dan `POST /v1/api-keys` wajib
+Semua endpoint kecuali `/health` dan `POST /api-keys` wajib
 mengirim header:
 
 ```
@@ -44,10 +44,10 @@ Tanpa header ini, atau kunci salah, API menjawab `401`:
 
 Kunci yang diterima ada dua jenis: master key dari env
 `OPENONGKIR_API_KEY` di server, dan key yang dibuat lewat
-`POST /v1/api-keys` (disimpan server sebagai hash SHA-256 — key
+`POST /api-keys` (disimpan server sebagai hash SHA-256 — key
 aslinya tidak pernah disimpan). Key yang dicabut ditolak `401`.
 
-## POST /v1/api-keys
+## POST /api-keys
 
 Membuat API key baru. **Tanpa auth** — konsol `/test` dibuka
 terbatas untuk publik agar siapa pun bisa mencoba API sendiri.
@@ -55,7 +55,7 @@ Key hanya ditampilkan sekali di respons; server tidak bisa
 menampilkannya lagi nanti, jadi simpan segera.
 
 ```
-POST /v1/api-keys
+POST /api-keys
 Content-Type: application/json
 
 { "label": "kunci tes" }
@@ -89,7 +89,7 @@ termasuk key yang baru dibuat.
 ## Rate limit
 
 **60 permintaan/menit per IP** (berlaku untuk semua endpoint, termasuk
-`/v1/health`). Melewati batas menjawab `429` dengan header
+`/health`). Melewati batas menjawab `429` dengan header
 `Retry-After: 60`:
 
 ```json
@@ -102,12 +102,12 @@ Tunnel — batas di atas dan batas pembuatan key berlaku per pengunjung,
 bukan per server. Header forward diabaikan bila permintaan tidak datang
 dari tunnel (anti spoofing).
 
-## GET /v1/health
+## GET /health
 
 Status layanan + metrik. **Tanpa auth** (untuk monitoring).
 
 ```
-GET /v1/health
+GET /health
 ```
 
 ```json
@@ -140,27 +140,27 @@ GET /v1/health
 | `quotes_live` | Jumlah quote yang diambil langsung dari kurir (kumulatif, per kurir) |
 | `quotes_db_pct` | % quote dari DB, 1 desimal (`null` bila belum ada quote sama sekali) |
 
-"Quote" dihitung **per kurir per permintaan** `/v1/cost`: satu
+"Quote" dihitung **per kurir per permintaan** `/cost`: satu
 permintaan dengan 5 kurir yang 4 di antaranya ada di DB menghitung
 `quotes_from_db +4` dan `quotes_live +1`. Kurir yang dilewati karena
 baru saja gagal (negative cache 1 jam) tidak dihitung di keduanya —
 tidak ada quote yang terlayani dari jalur mana pun.
 
-## GET /v1/wilayah
+## GET /wilayah
 
 Daftar wilayah Kemendagri (kode bertitik: provinsi `NN`, kabupaten
 `NN.NN`, kecamatan `NN.NN.NN`).
 
 ```
-GET /v1/wilayah
-GET /v1/wilayah?parent=36
+GET /wilayah
+GET /wilayah?parent=36
 ```
 
 | Param | Wajib | Keterangan |
 |---|---|---|
 | `parent` | tidak | Kode wilayah induk. Tanpa param: daftar 38 provinsi. Dengan `parent`: anak-anak dari kode itu. Kode induk yang tidak ada menjawab `400`. |
 
-Contoh respons `GET /v1/wilayah` (tanpa param — 38 provinsi):
+Contoh respons `GET /wilayah` (tanpa param — 38 provinsi):
 
 ```json
 {
@@ -173,18 +173,18 @@ Contoh respons `GET /v1/wilayah` (tanpa param — 38 provinsi):
 }
 ```
 
-`GET /v1/wilayah?parent=36` mengembalikan kabupaten di Banten
+`GET /wilayah?parent=36` mengembalikan kabupaten di Banten
 (`KABUPATEN PANDEGLANG`, `KABUPATEN LEBAK`, …); `?parent=36.71`
 mengembalikan kecamatan di Kota Tangerang. Nama wilayah huruf besar
 sesuai dataset Kemendagri.
 
-## GET /v1/cost
+## GET /cost
 
 Cek ongkir. Dibaca dari database sendiri; kurir yang rutenya belum
 ada atau sudah basi (> 30 hari) diambil langsung dari kurir lalu disimpan.
 
 ```
-GET /v1/cost?origin=36.72.01&destination=32.73.01&weight_g=1000&courier=jne,jnt,pos
+GET /cost?origin=36.72.01&destination=32.73.01&weight_g=1000&courier=jne,jnt,pos
 ```
 
 | Param | Wajib | Keterangan |
@@ -236,13 +236,13 @@ Catatan respons:
   API menjawab `502` (`"Tarif tidak dapat diambil dari kurir untuk rute ini."`).
 - Layanan kargo (JTR/SPS/GOKIL) tidak pernah muncul di `options`.
 
-## GET /v1/track
+## GET /track
 
 Cek resi live ke kurir. Hasil yang ditemukan di-cache 30 menit;
 `fresh=1` memaksa cek live.
 
 ```
-GET /v1/track?courier=jne&awb=KAJ0000000000001&phone=12345&fresh=1
+GET /track?courier=jne&awb=KAJ0000000000001&phone=12345&fresh=1
 ```
 
 | Param | Wajib | Keterangan |
@@ -313,9 +313,9 @@ Contoh respons 404 (resi tidak ditemukan):
 | HTTP | Arti | Contoh pemicu |
 |---|---|---|
 | 400 | Input tidak valid | Kode wilayah bukan kecamatan, `weight_g` di luar 100–30.000, kurir tidak dikenal, digit HP kurang |
-| 401 | API key tidak valid | Header `X-API-Key` tidak ada / salah / dicabut (tidak berlaku untuk `/v1/health` dan `POST /v1/api-keys`) |
+| 401 | API key tidak valid | Header `X-API-Key` tidak ada / salah / dicabut (tidak berlaku untuk `/health` dan `POST /api-keys`) |
 | 404 | Tidak ditemukan | Rute tidak dikenal, resi tidak ditemukan, verifikasi JNE gagal |
-| 405 | Metode tidak didukung | Selain `GET` (kecuali `POST /v1/api-keys`) |
+| 405 | Metode tidak didukung | Selain `GET` (kecuali `POST /api-keys`) |
 | 429 | Rate limit | > 60 permintaan/menit/IP, atau > 3 pembuatan key baru per IP per 24 jam |
 | 500 | Kesalahan internal | — |
 | 502 | Kurir gagal | Tarif tidak dapat diambil dari kurir (cost) atau kurir gagal/timeout (track) |
@@ -329,7 +329,7 @@ Contoh respons 404 (resi tidak ditemukan):
   tetap dekat dengan tarif live.
 - **AnterAja ongkir masih 403.** API ongkir AnterAja menolak
   permintaan dari IP layanan (403) — kurir ini muncul di `errors`
-  pada `/v1/cost`. Tracking AnterAja (`/v1/track`) TIDAK terblokir.
+  pada `/cost`. Tracking AnterAja (`/track`) TIDAK terblokir.
 - **JNE tidak membedakan resi tidak ada vs digit HP salah.**
   Keduanya kembali sebagai `VERIFICATION_FAILED` (404). Bila
   mendapat status ini, periksa kembali nomor resi DAN 5 digit
@@ -342,6 +342,6 @@ Contoh respons 404 (resi tidak ditemukan):
 - **Cache cek resi 30 menit**, hanya untuk hasil "ditemukan".
   Resi tidak ditemukan / error tidak di-cache agar percobaan
   berikutnya selalu cek live lagi.
-- **Jangan kirim nomor HP lengkap** ke `/v1/track` — cukup digit
+- **Jangan kirim nomor HP lengkap** ke `/track` — cukup digit
   terakhir yang diminta (JNE 5, J&T 4). Bila terlanjur mengirim
   nomor lengkap, API hanya memakai N digit terakhir.
