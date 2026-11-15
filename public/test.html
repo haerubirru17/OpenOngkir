@@ -779,7 +779,7 @@
           <p>Status paket live dari kurir. Hasil yang ditemukan di-cache 30 menit; resi tidak ditemukan selalu dicek live lagi.</p>
         </div>
         <section class="card card-pad" aria-label="Form lacak resi">
-          <form id="track-form">
+          <form id="track-form" novalidate>
             <div class="field">
               <label for="track-courier">Kurir</label>
               <select id="track-courier" name="track-courier"></select>
@@ -788,10 +788,10 @@
               <label for="awb">Nomor resi</label>
               <input type="text" id="awb" name="awb" autocomplete="off" placeholder="Nomor resi" autocapitalize="characters">
             </div>
-            <div class="field">
-              <label for="phone">Digit terakhir HP penerima</label>
-              <input type="text" id="phone" name="phone" autocomplete="off" inputmode="numeric" placeholder="JNE: 5 digit, J&amp;T: 4 digit">
-              <p class="hint">JNE butuh 5 digit terakhir, J&amp;T 4 digit terakhir nomor HP penerima. Kurir lain tidak butuh digit ini.</p>
+            <div class="field" id="phone-field">
+              <label for="phone" id="phone-label">Digit terakhir HP penerima</label>
+              <input type="text" id="phone" name="phone" autocomplete="off" inputmode="numeric" placeholder="5 digit terakhir HP penerima">
+              <p class="hint" id="phone-hint">JNE mewajibkan 5 digit terakhir HP penerima.</p>
             </div>
             <label class="check"><input type="checkbox" class="plain" id="track-fresh"> Tanya ulang ke kurir (fresh=1, abaikan cache)</label>
             <div class="submit-row">
@@ -1639,9 +1639,37 @@ $('cost-form').addEventListener('submit', async (e) => {
 });
 
 // ---- Cek resi ----
+// Kolom HP mengikuti kurir: JNE/J&T wajib (5/4 digit), SiCepat opsional,
+// POS/AnterAja tidak butuh digit — kolom disembunyikan.
+const PHONE_RULES = {
+  jne: { digits: 5, required: true, label: 'Digit terakhir HP penerima', placeholder: '5 digit terakhir HP penerima', hint: 'JNE mewajibkan 5 digit terakhir HP penerima.', emptyMsg: 'Isi dulu 5 digit terakhir HP penerima.' },
+  jnt: { digits: 4, required: true, label: 'Digit terakhir HP', placeholder: '4 digit terakhir HP', hint: 'J&T mewajibkan 4 digit terakhir HP pengirim/penerima.', emptyMsg: 'Isi dulu 4 digit terakhir HP pengirim/penerima.' },
+  sicepat: { digits: null, required: false, label: 'Digit terakhir HP penerima (Opsional)', placeholder: 'Opsional — sebagian resi membutuhkannya', hint: 'SiCepat membutuhkannya untuk sebagian resi.', emptyMsg: null },
+  pos: null,
+  anteraja: null,
+};
+
+function updatePhoneField() {
+  const rule = PHONE_RULES[$('track-courier').value];
+  const input = $('phone');
+  if (!rule) {
+    $('phone-field').hidden = true;
+    input.value = '';
+    input.required = false;
+    return;
+  }
+  $('phone-field').hidden = false;
+  input.required = rule.required;
+  $('phone-label').textContent = rule.label;
+  $('phone-hint').textContent = rule.hint;
+  input.placeholder = rule.placeholder;
+}
+
 $('track-courier').innerHTML = COURIERS.map(([code, name]) =>
   '<option value="' + code + '">' + esc(name) + '</option>'
 ).join('');
+$('track-courier').addEventListener('change', updatePhoneField);
+updatePhoneField();
 
 $('track-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1651,6 +1679,11 @@ $('track-form').addEventListener('submit', async (e) => {
   const phone = $('phone').value.trim();
   if (!awb) {
     $('track-result').innerHTML = errorBox({ message: 'Isi dulu nomor resinya.' });
+    return;
+  }
+  const phoneRule = PHONE_RULES[courier];
+  if (phoneRule && phoneRule.required && !phone) {
+    $('track-result').innerHTML = errorBox({ message: phoneRule.emptyMsg });
     return;
   }
   const q = new URLSearchParams({ courier, awb });

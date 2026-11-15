@@ -82,6 +82,11 @@ describe('server', () => {
     assert.match(body, /id="key-copy-saved"/);
     assert.match(body, /id="base-url-value"/);
     assert.match(body, /id="base-url-copy"/);
+    assert.match(body, /id="phone-field"/);
+    assert.match(body, /PHONE_RULES/);
+    assert.match(body, /updatePhoneField/);
+    assert.match(body, /track-courier'\)\.addEventListener\('change', updatePhoneField\)/);
+    assert.match(body, /phone-field'\)\.hidden = true/);
     assert.match(body, /window\.location\.origin \+ '\/v1'/);
     assert.doesNotMatch(body, /clipboard\.writeText\(window\.location\.origin\)/);
     assert.doesNotMatch(body, /panen/i);

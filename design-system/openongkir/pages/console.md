@@ -61,7 +61,7 @@ density 7 (2026-11-13).
 2. **Cek Ongkir** — form lengkap seperti sebelumnya (wilayah
    berjenjang, berat, chip kurir, fresh=1, hasil urut termurah +
    tag Termurah, JSON mentah collapsible).
-3. **Lacak Resi** — form + timeline seperti sebelumnya.
+3. **Lacak Resi** — form + timeline seperti sebelumnya. Kolom HP mengikuti kurir: JNE 5 digit (wajib), J&T 4 digit (wajib), SiCepat opsional, POS/AnterAja tersembunyi.
 4. **API Keys** — tombol "Buat API key gratis" (key tampil sekali +
    salin + auto-simpan localStorage), paste key manual, kartu
    "Kunci tersimpan" (kunci dari localStorage: tersembunyi default,
